@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  --color-cream: #FAF7F1;
+  --color-cream-card: #FFFFFF;
+  --color-sand: #F4EFE6;
+  --color-sand-hover: #EBE5D8;
+  --color-linen: #E8E0D2;
+  --color-charcoal: #24221F;
+  --color-charcoal-subtle: #4D4943;
+  --color-charcoal-muted: #757169;
+  --color-charcoal-light: #A8A49C;
+
+  --color-butter: #F7E198;
+  --color-butter-light: #FCF4DB;
+  --color-butter-dark: #E4C66C;
+
+  --color-coral: #F28F79;
+  --color-coral-light: #FBEAE6;
+  --color-coral-dark: #D96F58;
+
+  --color-sage: #A3C1AD;
+  --color-sage-light: #E6EFE9;
+  --color-sage-dark: #7C9F87;
+
+  --color-lavender: #C6B8D8;
+  --color-lavender-light: #F1EDF6;
+
+  --color-cobalt: #1C4CB8;
+  --color-cobalt-light: #E7EDFB;
+  --color-cobalt-dark: #123788;
+}
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #24221F;
+  background-color: #FAF7F1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom tactile shadows */
+.clay-card {
+  box-shadow: 0 4px 20px -2px rgba(36, 34, 31, 0.05), 0 1px 3px 0 rgba(36, 34, 31, 0.03);
+}
+
+.clay-card-hover {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clay-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -4px rgba(36, 34, 31, 0.09), 0 3px 8px 0 rgba(36, 34, 31, 0.04);
+}
+
+.clay-pill {
+  box-shadow: 0 2px 8px -1px rgba(36, 34, 31, 0.06);
+}
+
+/* Hide scrollbars gracefully where required */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
