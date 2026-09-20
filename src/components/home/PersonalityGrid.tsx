@@ -12,36 +12,36 @@ export const PersonalityGrid: React.FC = () => {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
+    <section className="py-12 sm:py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
-          <div className="space-y-2">
+        <div className="flex flex-row items-end justify-between mb-6 sm:mb-12 gap-4">
+          <div className="space-y-1.5 sm:space-y-2 text-left">
             <div className="text-[11px] font-bold tracking-widest uppercase text-[#757169] flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#A67E14]" />
               <span>Shop by Little Personality</span>
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
+            <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
               What makes them light up?
             </h2>
           </div>
           <button
             onClick={() => setView('shop')}
-            className="text-xs font-semibold text-[#1C4CB8] hover:text-[#123788] flex items-center gap-1 transition-colors self-start sm:self-auto"
+            className="text-xs font-semibold text-[#1C4CB8] hover:text-[#123788] flex items-center gap-1 transition-colors self-end shrink-0 pb-1 cursor-pointer"
           >
             <span>See all personalities</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* 6 Personality Cards Grid / Mobile Horizontal Scroll */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
+        {/* 6 Personality Cards Grid: 2 columns on mobile, 3 on tablet, 6 on desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6">
           {PERSONALITIES.map((item) => (
             <div
               key={item.id}
               onClick={() => handleSelectPersonality(item)}
-              className="group cursor-pointer flex flex-col justify-between rounded-[24px] overflow-hidden bg-white border border-[#E8E0D2] shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 min-w-[220px] sm:min-w-0"
+              className="group cursor-pointer flex flex-col justify-between rounded-[20px] sm:rounded-[24px] overflow-hidden bg-white border border-[#E8E0D2] shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300"
             >
               {/* Image with subtle overlay */}
               <div className="aspect-[4/5] relative overflow-hidden bg-[#FAF7F1]">

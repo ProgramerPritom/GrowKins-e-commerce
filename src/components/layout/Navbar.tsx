@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../context/StoreContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { MegaMenu } from './MegaMenu';
@@ -23,6 +24,38 @@ export const Navbar: React.FC = () => {
   const [megaMenuTab, setMegaMenuTab] = useState<'shop' | 'age' | 'play' | 'gifts' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on desktop resize or Escape key press
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setMobileMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const handleNavClick = (targetView: 'shop' | 'our-story', _filterType?: string) => {
     resetFilters();
     setView(targetView);
@@ -32,27 +65,27 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF7F1]/95 backdrop-blur-md border-b border-[#E8E0D2] transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
           
           {/* Left: Mobile hamburger & Brand Wordmark */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => setMobileMenuOpen(true)}
               className="lg:hidden p-2 text-[#24221F] hover:bg-[#F4EFE6] rounded-full transition-colors cursor-pointer"
-              aria-label="Toggle Navigation Menu"
+              aria-label="Open Navigation Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Menu className="w-5 h-5" />
             </button>
 
             <button 
               onClick={() => { setView('home'); resetFilters(); }}
               className="text-left group flex items-baseline gap-1 cursor-pointer"
             >
-              <span className="font-serif text-3xl font-bold tracking-tight text-[#24221F] group-hover:text-[#1C4CB8] transition-colors">
+              <span className="font-serif text-xl sm:text-3xl font-bold tracking-tight text-[#24221F] group-hover:text-[#1C4CB8] transition-colors">
                 GrowKins
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F28F79] mb-1 inline-block"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F28F79] mb-0.5 sm:mb-1 inline-block"></span>
             </button>
           </div>
 
@@ -123,22 +156,28 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Right: Actions (Language Switcher, Search, Wishlist, Bag) */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             
-            {/* Language Switcher Pill (Item 6) */}
+            {/* Language Switcher Pill */}
             <motion.button
               whileTap={{ scale: 0.94 }}
               onClick={toggleLanguage}
-              className="px-3 py-1.5 rounded-full bg-white border border-[#D9D3C7] hover:border-[#24221F] text-[#24221F] text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              className="px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-full bg-white border border-[#D9D3C7] hover:border-[#24221F] text-[#24221F] text-[11px] sm:text-xs font-bold flex items-center gap-1 sm:gap-1.5 transition-all shadow-2xs cursor-pointer shrink-0"
               title={language === 'en' ? 'বাংলা ভাষায় পরিবর্তন করুন' : 'Switch to English'}
               aria-label="Toggle language between English and Bangla"
             >
-              <Globe className="w-3.5 h-3.5 text-[#1C4CB8]" />
+              <Globe className="w-3.5 h-3.5 text-[#1C4CB8] shrink-0" />
               <span className="font-sans">
                 {language === 'en' ? (
-                  <>EN · <span className="font-semibold text-[#757169]">বাং</span></>
+                  <>
+                    <span className="hidden sm:inline">EN · <span className="font-semibold text-[#757169]">বাং</span></span>
+                    <span className="sm:hidden text-[10px]">বাং</span>
+                  </>
                 ) : (
-                  <>বাংলা · <span className="font-semibold text-[#757169]">EN</span></>
+                  <>
+                    <span className="hidden sm:inline">বাংলা · <span className="font-semibold text-[#757169]">EN</span></span>
+                    <span className="sm:hidden text-[10px]">EN</span>
+                  </>
                 )}
               </span>
             </motion.button>
@@ -146,11 +185,11 @@ export const Navbar: React.FC = () => {
             {/* Search Icon */}
             <button
               onClick={() => setSearchModalOpen(true)}
-              className="p-2.5 text-[#24221F] hover:bg-[#F4EFE6] rounded-full transition-colors flex items-center gap-2 group cursor-pointer"
+              className="p-2 sm:p-2.5 text-[#24221F] hover:bg-[#F4EFE6] rounded-full transition-colors flex items-center gap-2 group cursor-pointer shrink-0"
               title="Search discoveries"
               aria-label="Search products"
             >
-              <Search className="w-5 h-5 group-hover:scale-105 transition-transform" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-105 transition-transform" />
               <span className="hidden xl:inline-block text-xs text-[#757169] bg-[#F4EFE6] px-2.5 py-1 rounded-full border border-[#E8E0D2]">
                 {t.nav.searchPlaceholder}
               </span>
@@ -159,15 +198,15 @@ export const Navbar: React.FC = () => {
             {/* Wishlist Icon */}
             <button
               onClick={() => setView('wishlist')}
-              className="p-2.5 text-[#24221F] hover:bg-[#F4EFE6] rounded-full transition-colors relative group cursor-pointer"
+              className="p-2 sm:p-2.5 text-[#24221F] hover:bg-[#F4EFE6] rounded-full transition-colors relative group cursor-pointer shrink-0"
               title="Saved discoveries"
               aria-label="Wishlist"
             >
-              <Heart className={`w-5 h-5 transition-transform group-hover:scale-105 ${
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-105 ${
                 wishlistCount > 0 ? 'text-[#F28F79] fill-[#F28F79]/20' : ''
               }`} />
               {wishlistCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#F28F79] text-white text-[10px] font-bold flex items-center justify-center animate-in zoom-in">
+                <span className="absolute top-0.5 right-0.5 sm:top-1.5 sm:right-1.5 w-4 h-4 rounded-full bg-[#F28F79] text-white text-[10px] font-bold flex items-center justify-center animate-in zoom-in">
                   {wishlistCount}
                 </span>
               )}
@@ -178,13 +217,14 @@ export const Navbar: React.FC = () => {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setCartDrawerOpen(true)}
-              className="p-2.5 bg-[#24221F] text-[#FAF7F1] hover:bg-[#1C4CB8] rounded-full transition-all flex items-center gap-2 px-3.5 sm:px-4 shadow-sm hover:shadow cursor-pointer"
+              className="p-1.5 sm:p-2.5 bg-[#24221F] text-[#FAF7F1] hover:bg-[#1C4CB8] rounded-full transition-all flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 shadow-sm hover:shadow cursor-pointer shrink-0"
               title="View your shopping bag"
               aria-label="Shopping Bag"
             >
-              <ShoppingBag className="w-4 h-4" />
-              <span className="text-xs font-semibold flex items-center gap-1">
-                <span>{t.nav.bag} (</span>
+              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="text-[11px] sm:text-xs font-semibold flex items-center gap-0.5 sm:gap-1">
+                <span className="hidden sm:inline">{t.nav.bag}</span>
+                <span>(</span>
                 <AnimatedCounter count={cartCount} />
                 <span>)</span>
               </span>
@@ -201,76 +241,152 @@ export const Navbar: React.FC = () => {
         activeTab={megaMenuTab}
       />
 
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-[115px] z-50 bg-[#FAF7F1] border-t border-[#E8E0D2] overflow-y-auto p-6 pb-24 animate-in slide-in-from-left duration-200 text-left">
-          <div className="space-y-6">
-            
-            {/* Language Switcher in Mobile Drawer */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E0D2]">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#757169]">Language / ভাষা:</span>
-              <button
-                onClick={toggleLanguage}
-                className="px-3 py-1.5 rounded-full bg-white border border-[#D9D3C7] text-xs font-bold flex items-center gap-1.5"
+      {/* Mobile Slide-Over Drawer with Backdrop (Portaled directly to document.body) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <div className="lg:hidden fixed inset-0 z-50 flex">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+              />
+
+              {/* Drawer Panel */}
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+                className="relative w-[85vw] max-w-[320px] bg-[#FAF7F1] h-full shadow-2xl flex flex-col justify-between p-6 overflow-y-auto z-10 text-left border-r border-[#E8E0D2]"
               >
-                <Globe className="w-3.5 h-3.5 text-[#1C4CB8]" />
-                <span>{language === 'en' ? 'Switch to বাংলা' : 'Switch to English'}</span>
-              </button>
-            </div>
+                <div className="space-y-6">
+                  
+                  {/* Drawer Top Header with Brand & Close */}
+                  <div className="flex items-center justify-between pb-4 border-b border-[#E8E0D2]">
+                    <button 
+                      onClick={() => { setView('home'); resetFilters(); setMobileMenuOpen(false); }}
+                      className="flex items-baseline gap-1 cursor-pointer"
+                    >
+                      <span className="font-serif text-2xl font-bold tracking-tight text-[#24221F]">
+                        GrowKins
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#F28F79]"></span>
+                    </button>
+                    <button
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="p-2 rounded-full hover:bg-[#F4EFE6] text-[#24221F] transition-colors cursor-pointer"
+                      aria-label="Close menu"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
 
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest text-[#757169] mb-3">
-                Navigation
-              </div>
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleNavClick('shop')}
-                  className="w-full text-left font-serif text-2xl text-[#24221F] py-2 border-b border-[#E8E0D2]/50"
-                >
-                  {t.nav.shop}
-                </button>
-                <button
-                  onClick={() => {
-                    setFilter('age', ['1–2Y', '3–5Y']);
-                    setView('shop');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left font-serif text-2xl text-[#24221F] py-2 border-b border-[#E8E0D2]/50"
-                >
-                  {t.nav.byAge}
-                </button>
-                <button
-                  onClick={() => {
-                    setFilter('occasion', ['Gift']);
-                    setView('shop');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left font-serif text-2xl text-[#24221F] py-2 border-b border-[#E8E0D2]/50"
-                >
-                  {t.nav.gifts}
-                </button>
-                <button
-                  onClick={() => {
-                    setView('our-story');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left font-serif text-2xl text-[#24221F] py-2 border-b border-[#E8E0D2]/50"
-                >
-                  {t.nav.ourStory}
-                </button>
-              </div>
-            </div>
+                  {/* Language Switcher in Mobile Drawer */}
+                  <div className="flex items-center justify-between pb-3 border-b border-[#E8E0D2]">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#757169]">Language / ভাষা:</span>
+                    <button
+                      onClick={toggleLanguage}
+                      className="px-3 py-1.5 rounded-full bg-white border border-[#D9D3C7] text-xs font-bold flex items-center gap-1.5 shadow-2xs hover:border-[#24221F] transition-colors cursor-pointer"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-[#1C4CB8]" />
+                      <span>{language === 'en' ? 'বাংলা' : 'English'}</span>
+                    </button>
+                  </div>
 
-            <div className="bg-[#F4EFE6] rounded-2xl p-5 border border-[#E8E0D2]">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#1C4CB8] mb-1">
-                {t.announcement.cod}
-              </div>
-              <p className="text-xs text-[#24221F] leading-relaxed">
-                Nana Tower, Bosila, Dhaka · Hotline: 01767026831
-              </p>
+                  {/* Navigation Links */}
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-[#757169] mb-3">
+                      Discoveries
+                    </div>
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => handleNavClick('shop')}
+                        className="w-full text-left font-serif text-xl text-[#24221F] py-2.5 border-b border-[#E8E0D2]/50 hover:text-[#1C4CB8] transition-colors cursor-pointer"
+                      >
+                        {t.nav.shop}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFilter('age', ['1–2Y', '3–5Y']);
+                          setView('shop');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left font-serif text-xl text-[#24221F] py-2.5 border-b border-[#E8E0D2]/50 hover:text-[#1C4CB8] transition-colors cursor-pointer"
+                      >
+                        {t.nav.byAge}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFilter('occasion', ['Everyday play']);
+                          setView('shop');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left font-serif text-xl text-[#24221F] py-2.5 border-b border-[#E8E0D2]/50 hover:text-[#1C4CB8] transition-colors cursor-pointer"
+                      >
+                        {t.nav.everyday}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFilter('occasion', ['Gift']);
+                          setView('shop');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left font-serif text-xl text-[#24221F] py-2.5 border-b border-[#E8E0D2]/50 hover:text-[#1C4CB8] transition-colors cursor-pointer"
+                      >
+                        {t.nav.gifts}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setView('our-story');
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left font-serif text-xl text-[#24221F] py-2.5 border-b border-[#E8E0D2]/50 hover:text-[#1C4CB8] transition-colors cursor-pointer"
+                      >
+                        {t.nav.ourStory}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Service Details Card */}
+                  <div className="bg-[#F4EFE6] rounded-2xl p-4 border border-[#E8E0D2] space-y-1">
+                    <div className="text-xs font-bold uppercase tracking-wider text-[#1C4CB8]">
+                      {t.announcement.cod}
+                    </div>
+                    <p className="text-xs text-[#24221F] leading-relaxed">
+                      Nana Tower, Bosila, Dhaka · Hotline: 01767026831
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Drawer Footer actions */}
+                <div className="pt-6 border-t border-[#E8E0D2] flex items-center justify-between text-xs text-[#757169]">
+                  <button
+                    onClick={() => { setView('wishlist'); setMobileMenuOpen(false); }}
+                    className="hover:text-[#24221F] flex items-center gap-1.5 cursor-pointer font-medium"
+                  >
+                    <Heart className="w-4 h-4 text-[#F28F79]" />
+                    <span>Wishlist ({wishlistCount})</span>
+                  </button>
+                  <button
+                    onClick={() => { setCartDrawerOpen(true); setMobileMenuOpen(false); }}
+                    className="hover:text-[#24221F] font-bold flex items-center gap-1.5 text-[#24221F] cursor-pointer"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-[#1C4CB8]" />
+                    <span>Bag ({cartCount})</span>
+                  </button>
+                </div>
+
+              </motion.div>
             </div>
-          </div>
-        </div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </header>
   );

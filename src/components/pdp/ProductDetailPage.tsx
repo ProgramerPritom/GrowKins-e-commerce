@@ -96,34 +96,34 @@ export const ProductDetailPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-[#FAF7F1] py-8 sm:py-12">
+    <div className="bg-[#FAF7F1] py-6 sm:py-12 pb-28 lg:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs text-[#757169] mb-8">
-          <button onClick={() => setView('home')} className="hover:text-[#24221F] transition-colors">
+        {/* Breadcrumbs - horizontally scrollable on mobile */}
+        <nav className="flex items-center gap-2 text-xs text-[#757169] mb-6 sm:mb-8 overflow-x-auto whitespace-nowrap no-scrollbar py-0.5">
+          <button onClick={() => setView('home')} className="hover:text-[#24221F] transition-colors shrink-0">
             Home
           </button>
-          <span>›</span>
-          <button onClick={() => setView('shop')} className="hover:text-[#24221F] transition-colors">
+          <span className="shrink-0">›</span>
+          <button onClick={() => setView('shop')} className="hover:text-[#24221F] transition-colors shrink-0">
             Shop
           </button>
-          <span>›</span>
-          <span className="text-[#24221F] font-medium">{product.category}</span>
-          <span>›</span>
-          <span className="text-[#24221F] font-semibold">{product.name}</span>
+          <span className="shrink-0">›</span>
+          <span className="text-[#24221F] font-medium shrink-0">{product.category}</span>
+          <span className="shrink-0">›</span>
+          <span className="text-[#24221F] font-semibold truncate max-w-[180px] sm:max-w-none">{product.name}</span>
         </nav>
 
         {/* Top Product Hero Split Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 mb-20 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 mb-16 sm:mb-20 items-start">
           
           {/* LEFT: Multi-Angle Gallery */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="lg:col-span-7 space-y-3 sm:space-y-4">
             
             {/* Main Stage Image with Directional Crossfade & Lightbox Trigger */}
             <div 
               onClick={() => setLightboxOpen(true)}
-              className="aspect-square sm:aspect-[4/3] rounded-[32px] overflow-hidden bg-white border border-[#E8E0D2] shadow-sm relative group cursor-zoom-in"
+              className="aspect-square sm:aspect-[4/3] rounded-[24px] sm:rounded-[32px] overflow-hidden bg-white border border-[#E8E0D2] shadow-xs relative group cursor-zoom-in"
             >
               <AnimatePresence mode="wait">
                 <motion.img
@@ -140,31 +140,25 @@ export const ProductDetailPage: React.FC = () => {
 
               {/* Tag Pill */}
               {product.tag && (
-                <div className="absolute top-4 left-4 bg-[#F7E198] text-[#24221F] text-xs font-bold px-3 py-1 rounded-full shadow-xs pointer-events-none">
+                <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 bg-[#F7E198] text-[#24221F] text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-xs pointer-events-none">
                   {product.tag}
                 </div>
               )}
 
               {/* Expand to fullscreen badge */}
-              <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md rounded-full p-2.5 shadow-md border border-white/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <Maximize2 className="w-4 h-4 text-[#24221F]" />
+              <div className="absolute bottom-3.5 right-3.5 sm:bottom-4 sm:right-4 bg-white/90 backdrop-blur-md rounded-full p-2 sm:p-2.5 shadow-md border border-white/80 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#24221F]" />
               </div>
             </div>
 
-            {/* Thumbnail Strip */}
-            <div className={`grid gap-2 sm:gap-3 ${
-              galleryList.length <= 3 
-                ? 'grid-cols-3 max-w-xs' 
-                : galleryList.length <= 4 
-                ? 'grid-cols-4 max-w-sm' 
-                : 'grid-cols-6'
-            }`}>
+            {/* Thumbnail Strip: Scrollable on mobile if many, neatly grouped */}
+            <div className="flex sm:grid gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 no-scrollbar sm:grid-cols-6">
               {galleryList.map((item, idx) => (
                 <motion.button
                   key={idx}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedImageIndex(idx)}
-                  className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all p-0.5 bg-white relative ${
+                  className={`w-14 h-14 sm:w-auto sm:h-auto aspect-square shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all p-0.5 bg-white relative cursor-pointer ${
                     selectedImageIndex === idx 
                       ? 'border-[#1C4CB8] ring-2 ring-[#1C4CB8]/20' 
                       : 'border-[#E8E0D2] opacity-75 hover:opacity-100'
@@ -174,7 +168,7 @@ export const ProductDetailPage: React.FC = () => {
                   <img
                     src={item.url}
                     alt={item.label}
-                    className="w-full h-full object-cover rounded-xl"
+                    className="w-full h-full object-cover rounded-lg sm:rounded-xl"
                   />
                 </motion.button>
               ))}
@@ -204,39 +198,39 @@ export const ProductDetailPage: React.FC = () => {
 
             {/* Title & Price */}
             <div>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
+              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
                 {product.name}
               </h1>
-              <div className="mt-3 flex items-baseline gap-3">
-                <span className="font-bold text-3xl text-[#24221F] font-sans">
+              <div className="mt-3 flex flex-wrap items-baseline gap-2 sm:gap-3">
+                <span className="font-bold text-2xl sm:text-3xl text-[#24221F] font-sans">
                   ৳{product.price}
                 </span>
                 {product.originalPrice && (
-                  <span className="text-base text-[#A8A49C] line-through font-sans">
+                  <span className="text-sm sm:text-base text-[#A8A49C] line-through font-sans">
                     ৳{product.originalPrice}
                   </span>
                 )}
-                <span className="text-xs text-[#4F7A5E] bg-[#E6EFE9] px-2.5 py-0.5 rounded-full font-semibold">
-                  In Stock · Cash on Delivery Across Bangladesh
+                <span className="text-[11px] sm:text-xs text-[#4F7A5E] bg-[#E6EFE9] px-2.5 py-0.5 rounded-full font-semibold">
+                  In Stock · Cash on Delivery
                 </span>
               </div>
             </div>
 
             {/* Sensory Play Quote */}
-            <p className="font-serif italic text-base text-[#4D4943] bg-[#F4EFE6] p-4 rounded-2xl border border-[#E8E0D2]">
+            <p className="font-serif italic text-sm sm:text-base text-[#4D4943] bg-[#F4EFE6] p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-[#E8E0D2]">
               {product.sensoryQuote}
             </p>
 
             {/* Key Developmental Benefits */}
             <div className="space-y-2 border-y border-[#E8E0D2] py-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#757169]">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#757169]">
                 Key Developmental Milestones
               </span>
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
                 {product.benefits.map((benefit, idx) => (
                   <span 
                     key={idx}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E8E0D2] text-xs font-semibold text-[#24221F]"
+                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-white border border-[#E8E0D2] text-[11px] sm:text-xs font-semibold text-[#24221F]"
                   >
                     <Sparkles className="w-3 h-3 text-[#A67E14]" />
                     {benefit}
@@ -246,32 +240,32 @@ export const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* Value Statement */}
-            <p className="text-sm text-[#6E6A63] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#6E6A63] leading-relaxed">
               {product.description}
             </p>
 
             {/* Quantity Selector & Action CTAs */}
             <div className="space-y-4 pt-2">
               
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
                 {/* Stepper */}
-                <div className="flex items-center border border-[#D9D3C7] rounded-full px-3 py-2 bg-white">
+                <div className="flex items-center border border-[#D9D3C7] rounded-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white shrink-0">
                   <motion.button 
                     whileTap={{ scale: 0.85 }}
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-6 h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] transition-colors"
+                    className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] transition-colors cursor-pointer"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
-                  <span className="w-8 text-center font-bold text-sm text-[#24221F]">
+                  <span className="w-6 sm:w-8 text-center font-bold text-xs sm:text-sm text-[#24221F]">
                     {quantity}
                   </span>
                   <motion.button 
                     whileTap={{ scale: 0.85 }}
                     onClick={() => setQuantity(quantity + 1)}
-                    className="w-6 h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] transition-colors"
+                    className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] transition-colors cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </motion.button>
                 </div>
 
@@ -281,7 +275,7 @@ export const ProductDetailPage: React.FC = () => {
                   whileTap={{ scale: 0.97 }}
                   onClick={handleAddToCart}
                   disabled={addedAnimation}
-                  className={`flex-1 py-3.5 px-8 rounded-full text-sm font-semibold flex items-center justify-center gap-2 shadow-md transition-all duration-200 ${
+                  className={`flex-1 min-w-0 py-3 sm:py-3.5 px-4 sm:px-8 rounded-full text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-md transition-all duration-200 cursor-pointer ${
                     addedAnimation
                       ? 'bg-[#A3C1AD] text-white'
                       : 'bg-[#24221F] text-[#FAF7F1] hover:bg-[#1C4CB8]'
@@ -304,7 +298,7 @@ export const ProductDetailPage: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
-                        className="flex items-center gap-1.5"
+                        className="flex items-center gap-1.5 truncate"
                       >
                         <span>Add to Bag</span>
                         <span>·</span>
@@ -319,39 +313,39 @@ export const ProductDetailPage: React.FC = () => {
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => toggleWishlist(product.id)}
-                  className={`w-12 h-12 rounded-full border border-[#D9D3C7] bg-white flex items-center justify-center transition-colors shadow-2xs ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full border border-[#D9D3C7] bg-white flex items-center justify-center transition-colors shadow-2xs cursor-pointer ${
                     isFavorited ? 'text-[#F28F79] border-[#F28F79]' : 'text-[#757169] hover:text-[#24221F]'
                   }`}
                   title="Save to Wishlist"
                 >
-                  <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
+                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorited ? 'fill-current' : ''}`} />
                 </motion.button>
               </div>
 
               {/* Cash on Delivery Notice Card (Reassurance) */}
-              <div className="p-4 rounded-2xl bg-[#FCF4DB]/70 border border-[#F2E0B2] text-xs text-[#24221F] space-y-1">
+              <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#FCF4DB]/70 border border-[#F2E0B2] text-xs text-[#24221F] space-y-1">
                 <div className="font-bold flex items-center gap-1.5 text-[#856404]">
-                  <PackageCheck className="w-4 h-4 text-[#A67E14]" />
+                  <PackageCheck className="w-4 h-4 text-[#A67E14] shrink-0" />
                   <span>100% Cash on Delivery Across Bangladesh</span>
                 </div>
-                <p className="text-[#5E4D1D] leading-relaxed">
+                <p className="text-[#5E4D1D] leading-relaxed text-[11px] sm:text-xs">
                   Pay cash only after inspecting your parcel at your doorstep. Zero advance bKash or online card payment required.
                 </p>
               </div>
 
               {/* Delivery & Returns Reassurance */}
-              <div className="grid grid-cols-3 gap-2 pt-2 text-[11px] text-[#757169]">
-                <div className="flex items-center gap-1.5">
-                  <Truck className="w-3.5 h-3.5 text-[#1C4CB8]" />
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 text-[10px] sm:text-[11px] text-[#757169]">
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-[#1C4CB8] shrink-0" />
                   <span>Dhaka: 24–48h</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5 text-[#F28F79]" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5 text-[#F28F79] shrink-0" />
                   <span>Doorstep Inspection</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#A3C1AD]" />
-                  <span>Phone Confirmation</span>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#A3C1AD] shrink-0" />
+                  <span>Call Confirm</span>
                 </div>
               </div>
 
@@ -362,27 +356,27 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
         {/* Product Story: Why Little Ones Love It */}
-        <div className="bg-white rounded-[32px] p-8 sm:p-12 border border-[#E8E0D2] mb-16 text-left shadow-xs">
-          <div className="max-w-3xl space-y-4">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#1C4CB8]">
+        <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-12 border border-[#E8E0D2] mb-12 sm:mb-16 text-left shadow-xs">
+          <div className="max-w-3xl space-y-3 sm:space-y-4">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#1C4CB8]">
               Playroom Story
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#24221F]">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-[#24221F]">
               Why little ones love it
             </h2>
-            <p className="text-base sm:text-lg text-[#6E6A63] leading-relaxed">
+            <p className="text-sm sm:text-lg text-[#6E6A63] leading-relaxed">
               {product.whyKidsLoveIt}
             </p>
           </div>
 
           {/* 3 Developmental Milestones */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-[#FAF7F1]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-[#FAF7F1]">
             {product.developmentMilestones.map((milestone, idx) => (
-              <div key={idx} className="space-y-1">
+              <div key={idx} className="space-y-1 bg-[#FAF7F1]/50 sm:bg-transparent p-4 sm:p-0 rounded-xl sm:rounded-none">
                 <span className="text-xs font-mono font-bold text-[#A67E14] block">
                   0{idx + 1}
                 </span>
-                <h3 className="font-serif font-bold text-base text-[#24221F]">
+                <h3 className="font-serif font-bold text-sm sm:text-base text-[#24221F]">
                   {milestone.title}
                 </h3>
                 <p className="text-xs text-[#757169] leading-relaxed">
@@ -394,22 +388,22 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
         {/* What's In The Box Section */}
-        <div className="bg-[#FAF7F1] rounded-[32px] p-8 sm:p-12 border border-[#E8E0D2] mb-16 text-left">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="bg-[#FAF7F1] rounded-[24px] sm:rounded-[32px] p-6 sm:p-12 border border-[#E8E0D2] mb-12 sm:mb-16 text-left">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <Box className="w-5 h-5 text-[#1C4CB8]" />
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#24221F]">
+            <h2 className="font-serif text-xl sm:text-3xl font-bold text-[#24221F]">
               What's in the box
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {product.whatsInside.map((item, idx) => (
-              <div key={idx} className="bg-white p-4 rounded-2xl border border-[#E8E0D2] flex items-center justify-between">
+              <div key={idx} className="bg-white p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-[#E8E0D2] flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-sm text-[#24221F]">{item.name}</div>
-                  <div className="text-xs text-[#757169]">{item.detail}</div>
+                  <div className="font-semibold text-xs sm:text-sm text-[#24221F]">{item.name}</div>
+                  <div className="text-[11px] sm:text-xs text-[#757169]">{item.detail}</div>
                 </div>
-                <span className="text-xs font-mono font-bold text-[#1C4CB8] bg-[#FAF7F1] px-2.5 py-1 rounded-full border border-[#E8E0D2]">
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-[#1C4CB8] bg-[#FAF7F1] px-2.5 py-1 rounded-full border border-[#E8E0D2]">
                   {item.count}
                 </span>
               </div>
@@ -418,12 +412,12 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
         {/* Parent FAQs with Smooth Framer Motion Accordion */}
-        <div className="max-w-3xl mx-auto mb-20 text-left">
-          <div className="text-center mb-8">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#757169]">
+        <div className="max-w-3xl mx-auto mb-16 sm:mb-20 text-left">
+          <div className="text-center mb-6 sm:mb-8">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#757169]">
               Common Inquiries
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#24221F] mt-1">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-[#24221F] mt-1">
               Parent questions answered
             </h2>
           </div>
@@ -434,16 +428,17 @@ export const ProductDetailPage: React.FC = () => {
               return (
                 <div 
                   key={idx}
-                  className="bg-white rounded-2xl border border-[#E8E0D2] overflow-hidden transition-all shadow-2xs"
+                  className="bg-white rounded-xl sm:rounded-2xl border border-[#E8E0D2] overflow-hidden transition-all shadow-2xs"
                 >
                   <button
                     onClick={() => setActiveFaqIndex(isOpen ? null : idx)}
-                    className="w-full p-5 text-left font-semibold text-sm text-[#24221F] flex items-center justify-between gap-4"
+                    className="w-full p-4 sm:p-5 text-left font-semibold text-xs sm:text-sm text-[#24221F] flex items-center justify-between gap-4 cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <motion.div
                       animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
+                      className="shrink-0"
                     >
                       <ChevronDown className="w-4 h-4 text-[#757169]" />
                     </motion.div>
@@ -458,7 +453,7 @@ export const ProductDetailPage: React.FC = () => {
                         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }}
                         className="overflow-hidden"
                       >
-                        <div className="px-5 pb-5 text-xs sm:text-sm text-[#6E6A63] leading-relaxed border-t border-[#FAF7F1] pt-3">
+                        <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-xs sm:text-sm text-[#6E6A63] leading-relaxed border-t border-[#FAF7F1] pt-3">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -470,43 +465,43 @@ export const ProductDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Loved in Real Playrooms: Interactive Reviews Slider (Item 8) */}
-        <div className="bg-white rounded-[32px] p-8 sm:p-12 border border-[#E8E0D2] mb-20 text-left shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+        {/* Loved in Real Playrooms: Interactive Reviews Slider */}
+        <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-12 border border-[#E8E0D2] mb-16 sm:mb-20 text-left shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 sm:mb-10 gap-4">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-[#757169]">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#757169]">
                 Verified Feedback
               </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#24221F] mt-1">
+              <h2 className="font-serif text-2xl sm:text-4xl font-bold text-[#24221F] mt-1">
                 Loved in real playrooms.
               </h2>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="text-right">
-                  <div className="font-serif text-3xl font-bold text-[#24221F]">4.9</div>
-                  <div className="text-xs text-[#757169]">Based on {product.reviewCount} reviews</div>
+                  <div className="font-serif text-2xl sm:text-3xl font-bold text-[#24221F]">4.9</div>
+                  <div className="text-[10px] sm:text-xs text-[#757169]">Based on {product.reviewCount} reviews</div>
                 </div>
                 <div className="flex text-[#A67E14]">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
+                    <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
                   ))}
                 </div>
               </div>
 
               {/* Slider Prev / Next Controls */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => setReviewSlide(prev => (prev - 1 + Math.ceil(MOCK_REVIEWS.length / 2)) % Math.ceil(MOCK_REVIEWS.length / 2))}
-                  className="w-9 h-9 rounded-full border border-[#D9D3C7] bg-[#FAF7F1] text-[#24221F] hover:bg-white flex items-center justify-center transition-all shadow-2xs cursor-pointer active:scale-95"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-[#D9D3C7] bg-[#FAF7F1] text-[#24221F] hover:bg-white flex items-center justify-center transition-all shadow-2xs cursor-pointer active:scale-95"
                   aria-label="Previous review slide"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setReviewSlide(prev => (prev + 1) % Math.ceil(MOCK_REVIEWS.length / 2))}
-                  className="w-9 h-9 rounded-full border border-[#D9D3C7] bg-[#FAF7F1] text-[#24221F] hover:bg-white flex items-center justify-center transition-all shadow-2xs cursor-pointer active:scale-95"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-[#D9D3C7] bg-[#FAF7F1] text-[#24221F] hover:bg-white flex items-center justify-center transition-all shadow-2xs cursor-pointer active:scale-95"
                   aria-label="Next review slide"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -523,21 +518,21 @@ export const ProductDetailPage: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
             >
               {MOCK_REVIEWS.slice(reviewSlide * 2, reviewSlide * 2 + 2).map((review) => (
-                <div key={review.id} className="bg-[#FAF7F1] rounded-2xl p-6 border border-[#E8E0D2] flex flex-col justify-between shadow-2xs">
+                <div key={review.id} className="bg-[#FAF7F1] rounded-xl sm:rounded-2xl p-5 sm:p-6 border border-[#E8E0D2] flex flex-col justify-between shadow-2xs">
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
                       <div className="flex text-[#A67E14]">
                         {[...Array(review.rating)].map((_, i) => (
                           <Star key={i} className="w-3.5 h-3.5 fill-current" />
                         ))}
                       </div>
-                      <span className="text-[11px] text-[#A8A49C]">{review.date}</span>
+                      <span className="text-[10px] sm:text-[11px] text-[#A8A49C]">{review.date}</span>
                     </div>
 
-                    <h4 className="font-serif font-bold text-base text-[#24221F] mb-1">
+                    <h4 className="font-serif font-bold text-sm sm:text-base text-[#24221F] mb-1">
                       "{review.title}"
                     </h4>
                     <p className="text-xs sm:text-sm text-[#6E6A63] leading-relaxed">
@@ -547,11 +542,11 @@ export const ProductDetailPage: React.FC = () => {
 
                   <div className="mt-4 pt-4 border-t border-[#E8E0D2] flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-semibold text-[#24221F]">{review.author}</span>
-                      <span className="text-[#757169] block text-[11px]">{review.authorRole}</span>
+                      <span className="font-semibold text-[#24221F] text-xs sm:text-sm">{review.author}</span>
+                      <span className="text-[#757169] block text-[10px] sm:text-[11px]">{review.authorRole}</span>
                     </div>
                     {review.verified && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#E6EFE9] text-[#4F7A5E] text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-[#E6EFE9] text-[#4F7A5E] text-[9px] sm:text-[10px] font-bold">
                         Verified Play-Tester
                       </span>
                     )}
@@ -562,13 +557,13 @@ export const ProductDetailPage: React.FC = () => {
           </AnimatePresence>
 
           {/* Dots Indicator */}
-          <div className="flex items-center justify-center gap-1.5 mt-8">
+          <div className="flex items-center justify-center gap-1.5 mt-6 sm:mt-8">
             {Array.from({ length: Math.ceil(MOCK_REVIEWS.length / 2) }).map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setReviewSlide(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${
-                  idx === reviewSlide ? 'w-6 bg-[#24221F]' : 'w-2 bg-[#E8E0D2] hover:bg-[#A8A49C]'
+                className={`h-1.5 sm:h-2 rounded-full transition-all cursor-pointer ${
+                  idx === reviewSlide ? 'w-5 sm:w-6 bg-[#24221F]' : 'w-1.5 sm:w-2 bg-[#E8E0D2] hover:bg-[#A8A49C]'
                 }`}
                 aria-label={`Go to review slide ${idx + 1}`}
               />
@@ -577,17 +572,17 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
         {/* Keep the Play Going: Related Products */}
-        <div className="text-left mb-12">
-          <div className="mb-8">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#757169]">
+        <div className="text-left mb-8 sm:mb-12">
+          <div className="mb-6 sm:mb-8">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#757169]">
               Complementary Pieces
             </span>
-            <h2 className="font-serif text-3xl font-bold text-[#24221F] mt-1">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#24221F] mt-1">
               Keep the play going.
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-8">
             {relatedProducts.map(p => (
               <ProductCard key={p.id} product={p} />
             ))}
@@ -607,15 +602,15 @@ export const ProductDetailPage: React.FC = () => {
       />
 
       {/* Mobile Sticky Add to Cart Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E0D2] p-3 px-4 flex items-center justify-between gap-3 shadow-lg">
-        <div>
-          <div className="font-semibold text-sm text-[#24221F] line-clamp-1">{product.name}</div>
-          <div className="text-xs text-[#757169] font-bold font-sans">৳{product.price} · Cash on Delivery</div>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E0D2] p-3 px-4 flex items-center justify-between gap-3 shadow-lg pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-xs sm:text-sm text-[#24221F] truncate">{product.name}</div>
+          <div className="text-[11px] sm:text-xs text-[#757169] font-bold font-sans">৳{product.price} · Cash on Delivery</div>
         </div>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleAddToCart}
-          className="px-6 py-2.5 rounded-full bg-[#24221F] text-white hover:bg-[#1C4CB8] text-xs font-bold shrink-0 shadow-sm"
+          className="px-5 sm:px-6 py-2.5 rounded-full bg-[#24221F] text-white hover:bg-[#1C4CB8] text-xs font-bold shrink-0 shadow-sm cursor-pointer"
         >
           {addedAnimation ? 'Added ✓' : 'Add to Bag'}
         </motion.button>

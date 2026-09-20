@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Trust Pillars Banner for Bangladesh */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pb-12 mb-12 border-b border-[#3D3A35] text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-8 sm:pb-12 mb-8 sm:mb-12 border-b border-[#3D3A35] text-xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#FAF7F1]/10 flex items-center justify-center text-[#F7E198]">
               <PackageCheck className="w-5 h-5" />
@@ -200,14 +200,14 @@ export const Footer: React.FC = () => {
             </a>
           </div>
 
-          <div className="flex items-center gap-4 text-[#A8A49C]">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4 text-[#A8A49C] text-center">
             <span className="inline-flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-[#A3C1AD]" />
               100% Cash on Delivery
             </span>
-            <span>·</span>
+            <span className="hidden sm:inline">·</span>
             <span>Nana Tower, Bosila, Dhaka</span>
-            <span>·</span>
+            <span className="hidden sm:inline">·</span>
             <span className="flex items-center gap-1">
               Crafted with <Heart className="w-3 h-3 text-[#F28F79] fill-[#F28F79]" /> for Bangladeshi families
             </span>

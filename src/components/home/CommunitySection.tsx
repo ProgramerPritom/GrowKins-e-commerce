@@ -26,29 +26,29 @@ export const CommunitySection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 md:py-28 bg-[#F1EDF6] border-b border-[#E8E0D2]/60">
+    <section className="py-12 sm:py-20 md:py-28 bg-[#F1EDF6] border-b border-[#E8E0D2]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-left mb-12 space-y-2">
+        <div className="text-left mb-8 sm:mb-12 space-y-2">
           <div className="text-[11px] font-bold tracking-widest uppercase text-[#7A6199] flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#7A6199]" />
             <span>Community Stories</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
+          <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
             Little moments, shared.
           </h2>
-          <p className="text-sm sm:text-base text-[#6E6A63] max-w-lg">
+          <p className="text-xs sm:text-base text-[#6E6A63] max-w-lg">
             Glimpses from family homes across the country. Real playrooms, quiet mornings, and big imaginative leaps.
           </p>
         </div>
 
         {/* 4 Image Grid with Subtle Hover Captions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-6">
           {communityPhotos.map((item, idx) => (
             <div
               key={idx}
-              className="group relative rounded-[24px] overflow-hidden aspect-square bg-white border border-[#E8E0D2] shadow-xs cursor-pointer"
+              className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden aspect-square bg-white border border-[#E8E0D2] shadow-xs cursor-pointer"
             >
               <img
                 src={item.img}
@@ -57,11 +57,11 @@ export const CommunitySection: React.FC = () => {
               />
 
               {/* Hover caption overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 text-white text-left">
-                <p className="font-serif text-sm font-semibold leading-tight">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 sm:p-4 text-white text-left">
+                <p className="font-serif text-xs sm:text-sm font-semibold leading-tight line-clamp-2">
                   "{item.caption}"
                 </p>
-                <div className="flex items-center justify-between text-[11px] text-white/80 mt-1">
+                <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-white/80 mt-1">
                   <span>{item.author}</span>
                   <Heart className="w-3 h-3 text-[#F28F79] fill-[#F28F79]" />
                 </div>

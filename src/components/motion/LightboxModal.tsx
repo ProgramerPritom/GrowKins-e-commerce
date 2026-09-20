@@ -47,14 +47,14 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
             className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 text-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-xs font-mono uppercase tracking-wider text-white/70">
-              {title && <span className="font-serif font-semibold mr-3">{title}</span>}
-              <span>{currentIndex + 1} / {images.length}</span>
+            <div className="text-xs font-mono uppercase tracking-wider text-white/70 flex items-center min-w-0 pr-2">
+              {title && <span className="font-serif font-semibold mr-3 truncate max-w-[180px] sm:max-w-md text-white">{title}</span>}
+              <span className="shrink-0">{currentIndex + 1} / {images.length}</span>
             </div>
 
             <button
               onClick={onClose}
-              className="p-2.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+              className="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors cursor-pointer shrink-0"
               aria-label="Close fullscreen preview"
             >
               <X className="w-5 h-5" />
@@ -68,10 +68,10 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
                 e.stopPropagation();
                 onNavigate((currentIndex - 1 + images.length) % images.length);
               }}
-              className="absolute left-4 sm:left-8 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all hover:scale-110 active:scale-95 z-10"
+              className="absolute left-2 sm:left-8 p-2 sm:p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all hover:scale-110 active:scale-95 z-10 cursor-pointer"
               aria-label="Previous image"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           )}
 
@@ -82,13 +82,13 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.94 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-4xl max-h-[80vh] rounded-3xl overflow-hidden shadow-2xl relative"
+            className="max-w-4xl max-h-[80vh] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={images[currentIndex]}
               alt={title || 'Product view'}
-              className="w-full h-full object-contain max-h-[80vh] rounded-2xl"
+              className="w-full h-full object-contain max-h-[80vh] rounded-xl sm:rounded-2xl"
             />
           </motion.div>
 
@@ -99,10 +99,10 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
                 e.stopPropagation();
                 onNavigate((currentIndex + 1) % images.length);
               }}
-              className="absolute right-4 sm:right-8 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all hover:scale-110 active:scale-95 z-10"
+              className="absolute right-2 sm:right-8 p-2 sm:p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all hover:scale-110 active:scale-95 z-10 cursor-pointer"
               aria-label="Next image"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           )}
 

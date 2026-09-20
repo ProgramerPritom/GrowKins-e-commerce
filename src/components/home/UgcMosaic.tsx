@@ -68,49 +68,49 @@ export const UgcMosaic: React.FC = () => {
   const current = TESTIMONIALS[currentIndex];
 
   return (
-    <section className="py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
+    <section className="py-12 sm:py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Title */}
-        <div className="text-left mb-12 space-y-2">
+        <div className="text-left mb-8 sm:mb-12 space-y-2">
           <div className="text-[11px] font-bold tracking-widest uppercase text-[#757169] flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#A67E14]" />
             <span>See It In Their World</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
+          <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
             Real play is beautifully imperfect.
           </h2>
-          <p className="text-sm sm:text-base text-[#6E6A63] max-w-xl">
+          <p className="text-xs sm:text-base text-[#6E6A63] max-w-xl">
             Towers tumble, pieces scatter across the floorboards, and that is exactly how little brains learn. Real moments from real playrooms across Bangladesh.
           </p>
         </div>
 
         {/* Asymmetrical Lifestyle Mosaic Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
           
           {/* Large Left Image */}
-          <div className="lg:col-span-6 rounded-[28px] overflow-hidden bg-[#F4EFE6] border border-[#E8E0D2] shadow-xs relative aspect-[4/3] lg:aspect-auto group">
+          <div className="lg:col-span-6 rounded-[24px] sm:rounded-[28px] overflow-hidden bg-[#F4EFE6] border border-[#E8E0D2] shadow-xs relative aspect-[4/3] lg:aspect-auto group">
             <img
               src="https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1000&q=80"
               alt="Parent and child engaged in quiet building play on the rug"
               className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-            <div className="absolute bottom-5 left-5 right-5 text-white text-left">
-              <span className="text-[11px] font-mono uppercase tracking-wider bg-white/20 backdrop-blur-xs px-2.5 py-1 rounded-full">
+            <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5 text-white text-left">
+              <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider bg-white/20 backdrop-blur-xs px-2.5 py-1 rounded-full">
                 Living Room Moments
               </span>
-              <p className="text-sm font-medium mt-2 text-white/90">
+              <p className="text-xs sm:text-sm font-medium mt-1.5 sm:mt-2 text-white/90">
                 "No screens needed. Just thirty uninterrupted minutes of quiet imagination."
               </p>
             </div>
           </div>
 
-          {/* Right Side: 2 Images + Testimonial Slider Card (Item 5) */}
-          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Right Side: 2 Images (side-by-side on mobile) + Testimonial Slider Card (Item 5) */}
+          <div className="lg:col-span-6 grid grid-cols-2 gap-3.5 sm:gap-6">
             
             {/* Top Right Image 1 */}
-            <div className="rounded-[24px] overflow-hidden bg-[#F4EFE6] border border-[#E8E0D2] relative aspect-square group">
+            <div className="rounded-[20px] sm:rounded-[24px] overflow-hidden bg-[#F4EFE6] border border-[#E8E0D2] relative aspect-square group">
               <img
                 src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=600&q=80"
                 alt="Child stacking wooden animals"
@@ -119,7 +119,7 @@ export const UgcMosaic: React.FC = () => {
             </div>
 
             {/* Top Right Image 2 */}
-            <div className="rounded-[24px] overflow-hidden bg-[#F4EFE6] border border-[#E8E0D2] relative aspect-square group">
+            <div className="rounded-[20px] sm:rounded-[24px] overflow-hidden bg-[#F4EFE6] border border-[#E8E0D2] relative aspect-square group">
               <img
                 src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=600&q=80"
                 alt="Montessori stacking rainbow and crayons"
@@ -128,7 +128,7 @@ export const UgcMosaic: React.FC = () => {
             </div>
 
             {/* Bottom Full-Width Parent Review Slider Card with Profile Pictures */}
-            <div className="sm:col-span-2 rounded-[24px] bg-[#FCE8E3] border border-[#F3CCC2] p-6 sm:p-7 text-left relative flex flex-col justify-between shadow-xs overflow-hidden min-h-[220px]">
+            <div className="col-span-2 rounded-[20px] sm:rounded-[24px] bg-[#FCE8E3] border border-[#F3CCC2] p-5 sm:p-7 text-left relative flex flex-col justify-between shadow-xs overflow-hidden min-h-[200px] sm:min-h-[220px]">
               
               {/* Header row with quote mark and slide controls */}
               <div className="flex items-center justify-between mb-3">

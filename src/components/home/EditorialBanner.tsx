@@ -6,9 +6,9 @@ export const EditorialBanner: React.FC = () => {
   const { setView } = useStore();
 
   return (
-    <section className="py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
+    <section className="py-12 sm:py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-[32px] overflow-hidden min-h-[460px] flex items-center p-8 sm:p-14 bg-[#24221F] shadow-lg">
+        <div className="relative rounded-[24px] sm:rounded-[32px] overflow-hidden min-h-[380px] sm:min-h-[460px] flex items-center p-6 sm:p-14 bg-[#24221F] shadow-lg">
           
           {/* Background image */}
           <img
@@ -17,15 +17,15 @@ export const EditorialBanner: React.FC = () => {
             className="absolute inset-0 w-full h-full object-cover opacity-45"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-black/90 via-black/70 sm:via-black/55 to-black/30 sm:to-transparent" />
 
           {/* Editorial Card Content */}
-          <div className="relative z-10 max-w-lg text-left space-y-4 text-white">
+          <div className="relative z-10 max-w-lg text-left space-y-3 sm:space-y-4 text-white">
             <span className="text-[11px] font-bold tracking-widest uppercase text-[#F7E198]">
               Brand Philosophy
             </span>
 
-            <h2 className="font-serif text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+            <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
               Less stuff.<br />
               Better play.
             </h2>

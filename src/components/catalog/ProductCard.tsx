@@ -39,7 +39,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       className="group cursor-pointer flex flex-col justify-between relative text-left"
     >
       {/* Product Image Container */}
-      <div className="aspect-square w-full rounded-[24px] overflow-hidden bg-[#F4EFE6] relative mb-3.5 border border-[#E8E0D2] shadow-xs group-hover:shadow-xl transition-shadow duration-300">
+      <div className="aspect-square w-full rounded-[18px] sm:rounded-[24px] overflow-hidden bg-[#F4EFE6] relative mb-2.5 sm:mb-3.5 border border-[#E8E0D2] shadow-xs group-hover:shadow-xl transition-shadow duration-300">
         
         {/* Main vs Secondary Image Swap with smooth crossfade */}
         <div className="w-full h-full relative overflow-hidden">
@@ -65,7 +65,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {/* Tag Pill (BESTSELLER / NEW / STAFF PICK) */}
         {product.tag && (
-          <div className="absolute top-3 left-3 bg-[#F7E198] text-[#24221F] text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full shadow-xs pointer-events-none">
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#F7E198] text-[#24221F] text-[9px] sm:text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-xs pointer-events-none">
             {product.tag}
           </div>
         )}
@@ -76,10 +76,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           whileTap={{ scale: 0.88 }}
           onClick={handleWishlistClick}
           aria-label={isFavorited ? 'Remove from wishlist' : 'Save to wishlist'}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs border border-[#E8E0D2] flex items-center justify-center text-[#24221F] transition-colors shadow-xs z-10"
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-xs border border-[#E8E0D2] flex items-center justify-center text-[#24221F] transition-colors shadow-xs z-10"
         >
           <Heart 
-            className={`w-4 h-4 transition-colors ${
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${
               isFavorited ? 'text-[#F28F79] fill-[#F28F79]' : 'text-[#757169] group-hover:text-[#24221F]'
             }`} 
           />
@@ -127,19 +127,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={handleQuickAdd}
-          className="sm:hidden absolute bottom-3 right-3 w-9 h-9 rounded-full bg-[#24221F] text-[#FAF7F1] flex items-center justify-center shadow-md z-10"
+          className="sm:hidden absolute bottom-2 right-2 w-8 h-8 rounded-full bg-[#24221F] text-[#FAF7F1] flex items-center justify-center shadow-md z-10"
           aria-label="Add to Bag"
         >
-          {addedAnimation ? <Check className="w-4 h-4 text-[#A3C1AD]" /> : <Plus className="w-4 h-4" />}
+          {addedAnimation ? <Check className="w-3.5 h-3.5 text-[#A3C1AD]" /> : <Plus className="w-3.5 h-3.5" />}
         </motion.button>
 
       </div>
 
       {/* Card Info Section */}
-      <div className="space-y-1 px-1">
+      <div className="space-y-0.5 sm:space-y-1 px-0.5 sm:px-1">
         
         {/* Top: Age Badge + Star Rating */}
-        <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-[#757169]">
+        <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[#757169]">
           <span className="font-semibold text-[#6E6A63]">
             {product.ageBadge}
           </span>
@@ -147,22 +147,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="flex items-center gap-1 text-[#24221F] font-sans font-medium">
             <Star className="w-3 h-3 fill-[#A67E14] text-[#A67E14]" />
             <span>{product.rating}</span>
-            <span className="text-[#A8A49C] text-[10px]">({product.reviewCount})</span>
+            <span className="text-[#A8A49C] text-[9px] sm:text-[10px]">({product.reviewCount})</span>
           </div>
         </div>
 
         {/* Title + Price Row */}
-        <div className="flex items-baseline justify-between gap-2 pt-0.5">
-          <h3 className="font-serif text-base font-bold text-[#24221F] line-clamp-1 group-hover:text-[#1C4CB8] transition-colors">
+        <div className="flex items-baseline justify-between gap-1.5 pt-0.5">
+          <h3 className="font-serif text-xs sm:text-base font-bold text-[#24221F] line-clamp-1 group-hover:text-[#1C4CB8] transition-colors">
             {product.name}
           </h3>
-          <span className="font-semibold text-sm text-[#24221F] shrink-0 font-sans">
+          <span className="font-semibold text-xs sm:text-sm text-[#24221F] shrink-0 font-sans">
             ৳{product.price}
           </span>
         </div>
 
         {/* Developmental Benefit Statement */}
-        <p className="text-xs text-[#757169] line-clamp-1 font-normal">
+        <p className="text-[10px] sm:text-xs text-[#757169] line-clamp-1 font-normal">
           {product.valueStatement}
         </p>
 

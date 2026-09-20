@@ -53,35 +53,37 @@ export const FullCartPage: React.FC = () => {
   }
 
   return (
-    <div className="py-12 bg-[#FAF7F1] min-h-screen text-left">
+    <div className="py-6 sm:py-12 bg-[#FAF7F1] min-h-screen text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-[#757169] mb-6">
-          <button onClick={() => setView('home')} className="hover:text-[#24221F]">Home</button>
+        <nav className="flex items-center gap-2 text-xs text-[#757169] mb-4 sm:mb-6">
+          <button onClick={() => setView('home')} className="hover:text-[#24221F] cursor-pointer">Home</button>
           <span>›</span>
           <span className="text-[#24221F] font-semibold">Shopping Bag</span>
         </nav>
 
-        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#24221F] mb-8">
+        <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold text-[#24221F] mb-6 sm:mb-8">
           Your shopping bag
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
           
           {/* Left Table / List of Cart Items */}
           <div className="lg:col-span-8 space-y-4">
             
             {/* Free shipping alert */}
-            <div className="p-4 rounded-2xl bg-[#FAF3DE] border border-[#EADBB6] flex items-center justify-between text-xs font-semibold text-[#6C5311]">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF3DE] border border-[#EADBB6] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-0 text-xs font-semibold text-[#6C5311]">
               <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#A67E14]" />
-                {isFreeShipping 
-                  ? "Congratulations! You have unlocked Free Nationwide Delivery across Bangladesh."
-                  : `Add ৳${amountUntilFreeShipping.toFixed(0)} more to unlock Free Nationwide Delivery!`
-                }
+                <Sparkles className="w-4 h-4 text-[#A67E14] shrink-0" />
+                <span>
+                  {isFreeShipping 
+                    ? "Congratulations! You have unlocked Free Nationwide Delivery across Bangladesh."
+                    : `Add ৳${amountUntilFreeShipping.toFixed(0)} more to unlock Free Nationwide Delivery!`
+                  }
+                </span>
               </span>
-              <span>Free Delivery threshold: ৳2,500</span>
+              <span className="text-[11px] text-[#A67E14] font-normal sm:font-semibold shrink-0">Threshold: ৳2,500</span>
             </div>
 
             {/* Items */}
@@ -94,21 +96,21 @@ export const FullCartPage: React.FC = () => {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-white rounded-2xl p-5 border border-[#E8E0D2] shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8E0D2] shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-[#FAF7F1] border border-[#E8E0D2] shrink-0">
+                    <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-[#FAF7F1] border border-[#E8E0D2] shrink-0">
                         <img
                           src={item.product.images.main}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <span className="text-[10px] font-mono text-[#757169] uppercase tracking-wider block">
                           {item.product.ageBadge}
                         </span>
-                        <h3 className="font-serif font-bold text-base text-[#24221F]">
+                        <h3 className="font-serif font-bold text-sm sm:text-base text-[#24221F] truncate">
                           {item.product.name}
                         </h3>
                         <p className="text-xs text-[#757169] mt-0.5 line-clamp-1">
@@ -120,29 +122,29 @@ export const FullCartPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between w-full sm:w-auto gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#FAF7F1]">
-                      <div className="flex items-center border border-[#D9D3C7] rounded-full px-3 py-1 bg-[#FAF7F1]">
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:gap-6 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#FAF7F1]">
+                      <div className="flex items-center border border-[#D9D3C7] rounded-full px-2.5 sm:px-3 py-1 bg-[#FAF7F1]">
                         <motion.button
                           whileTap={{ scale: 0.85 }}
                           onClick={() => updateQuantity(item.product.id, -1)}
-                          className="w-6 h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F]"
+                          className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] cursor-pointer"
                         >
-                          <Minus className="w-3.5 h-3.5" />
+                          <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </motion.button>
-                        <span className="w-8 text-center font-bold text-sm">
+                        <span className="w-6 sm:w-8 text-center font-bold text-xs sm:text-sm">
                           {item.quantity}
                         </span>
                         <motion.button
                           whileTap={{ scale: 0.85 }}
                           onClick={() => updateQuantity(item.product.id, 1)}
-                          className="w-6 h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F]"
+                          className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] cursor-pointer"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </motion.button>
                       </div>
 
                       <div className="text-right">
-                        <div className="font-bold text-base text-[#24221F] font-sans">
+                        <div className="font-bold text-sm sm:text-base text-[#24221F] font-sans">
                           ৳{item.product.price * item.quantity}
                         </div>
                         <div className="hidden sm:block text-[11px] text-[#A8A49C] font-sans">
@@ -153,7 +155,7 @@ export const FullCartPage: React.FC = () => {
                       <motion.button
                         whileTap={{ scale: 0.85 }}
                         onClick={() => removeFromCart(item.product.id)}
-                        className="text-[#A8A49C] hover:text-[#D96F58] p-1.5 transition-colors"
+                        className="text-[#A8A49C] hover:text-[#D96F58] p-1.5 transition-colors cursor-pointer"
                         title="Remove item"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -165,8 +167,8 @@ export const FullCartPage: React.FC = () => {
             </div>
 
             {/* Gift Options Box */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E8E0D2] shadow-2xs space-y-4">
-              <label className="flex items-center gap-2.5 text-sm font-semibold text-[#24221F] cursor-pointer">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#E8E0D2] shadow-2xs space-y-4">
+              <label className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-[#24221F] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isGift}
@@ -174,7 +176,7 @@ export const FullCartPage: React.FC = () => {
                   className="w-4 h-4 rounded text-[#1C4CB8] focus:ring-[#1C4CB8]"
                 />
                 <span className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-[#F28F79]" /> This is a gift order (Gift note & packaging included)
+                  <Gift className="w-4 h-4 text-[#F28F79] shrink-0" /> This is a gift order (Gift note & packaging included)
                 </span>
               </label>
 
@@ -185,14 +187,14 @@ export const FullCartPage: React.FC = () => {
                     placeholder="Recipient's Name (optional)"
                     value={giftRecipient}
                     onChange={(e) => setGiftRecipient(e.target.value)}
-                    className="w-full text-sm p-3 rounded-xl border border-[#D9D3C7] bg-[#FAF7F1]"
+                    className="w-full text-xs sm:text-sm p-2.5 sm:p-3 rounded-xl border border-[#D9D3C7] bg-[#FAF7F1]"
                   />
                   <textarea
                     placeholder="Gift card message (e.g. 'Happy 3rd Birthday Ryan! Warm wishes from Khalamoni')"
                     value={giftMessage}
                     onChange={(e) => setGiftMessage(e.target.value)}
                     rows={2}
-                    className="w-full text-sm p-3 rounded-xl border border-[#D9D3C7] bg-[#FAF7F1]"
+                    className="w-full text-xs sm:text-sm p-2.5 sm:p-3 rounded-xl border border-[#D9D3C7] bg-[#FAF7F1]"
                   />
                 </div>
               )}
@@ -201,8 +203,8 @@ export const FullCartPage: React.FC = () => {
           </div>
 
           {/* Right Summary Panel */}
-          <div className="lg:col-span-4 bg-white rounded-3xl p-6 sm:p-8 border border-[#E8E0D2] shadow-sm space-y-6">
-            <h2 className="font-serif text-xl font-bold text-[#24221F]">
+          <div className="lg:col-span-4 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-[#E8E0D2] shadow-sm space-y-5 sm:space-y-6">
+            <h2 className="font-serif text-lg sm:text-xl font-bold text-[#24221F]">
               Order Summary
             </h2>
 
@@ -240,7 +242,7 @@ export const FullCartPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-2 text-sm text-[#6E6A63]">
+            <div className="space-y-2 text-xs sm:text-sm text-[#6E6A63]">
               <div className="flex justify-between">
                 <span>Items Subtotal</span>
                 <span className="font-semibold text-[#24221F] font-sans">৳{subtotal}</span>
@@ -249,19 +251,19 @@ export const FullCartPage: React.FC = () => {
                 <span>Courier Delivery ({deliveryDetails.deliveryZone === 'inside-dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'})</span>
                 <span>{deliveryFee === 0 ? <strong className="text-[#4F7A5E]">FREE</strong> : `৳${deliveryFee}`}</span>
               </div>
-              <div className="flex justify-between pt-3 border-t border-[#E8E0D2] text-lg font-bold text-[#24221F]">
+              <div className="flex justify-between pt-3 border-t border-[#E8E0D2] text-base sm:text-lg font-bold text-[#24221F]">
                 <span>Total Payable (COD)</span>
                 <span className="font-sans">৳{total}</span>
               </div>
             </div>
 
             {/* Cash on Delivery Banner */}
-            <div className="p-4 rounded-2xl bg-[#FCF4DB] border border-[#F2E0B2] text-xs space-y-1">
+            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#FCF4DB] border border-[#F2E0B2] text-xs space-y-1">
               <div className="font-bold text-[#856404] flex items-center gap-1.5">
-                <PackageCheck className="w-4 h-4 text-[#A67E14]" />
+                <PackageCheck className="w-4 h-4 text-[#A67E14] shrink-0" />
                 <span>Cash on Delivery Across Bangladesh</span>
               </div>
-              <p className="text-[#5E4D1D]">
+              <p className="text-[#5E4D1D] text-[11px] sm:text-xs">
                 Zero advance payment needed. Inspect the parcel upon doorstep delivery before paying.
               </p>
             </div>
@@ -270,14 +272,14 @@ export const FullCartPage: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setView('checkout')}
-              className="w-full py-4 rounded-full bg-[#24221F] text-white hover:bg-[#1C4CB8] text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-colors cursor-pointer"
+              className="w-full py-3.5 sm:py-4 px-4 rounded-full bg-[#24221F] text-white hover:bg-[#1C4CB8] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-colors cursor-pointer"
             >
               <span>Proceed to Cash on Delivery Checkout</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </motion.button>
 
             <div className="text-center text-xs text-[#757169]">
-              <button onClick={() => setView('shop')} className="hover:underline">
+              <button onClick={() => setView('shop')} className="hover:underline cursor-pointer">
                 ← Keep shopping
               </button>
             </div>

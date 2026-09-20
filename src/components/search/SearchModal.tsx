@@ -79,57 +79,58 @@ export const SearchModal: React.FC = () => {
             className="fixed inset-0 bg-black/40 backdrop-blur-xs"
           />
 
-          <div className="relative max-w-3xl mx-auto mt-16 sm:mt-24 px-4 pb-12">
+          <div className="relative max-w-3xl mx-auto mt-4 sm:mt-24 px-3 sm:px-4 pb-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: -12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -12 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as const }}
-              className="bg-[#FAF7F1] rounded-[32px] shadow-2xl border border-[#E8E0D2] overflow-hidden text-left"
+              className="bg-[#FAF7F1] rounded-2xl sm:rounded-[32px] shadow-2xl border border-[#E8E0D2] overflow-hidden text-left"
             >
               
               {/* Top Search Input Bar */}
-              <div className="p-5 sm:p-6 border-b border-[#E8E0D2] bg-white flex items-center gap-3">
-                <Search className="w-5 h-5 text-[#757169] shrink-0" />
+              <div className="p-3.5 sm:p-6 border-b border-[#E8E0D2] bg-white flex items-center gap-2.5 sm:gap-3">
+                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#757169] shrink-0" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search discoveries (e.g. 'stacking arch', 'wooden camera', 'under ৳2,000')..."
-                  className="w-full text-base sm:text-lg bg-transparent text-[#24221F] placeholder-[#A8A49C] focus:outline-none"
+                  placeholder="Search toys (e.g. 'stacking', 'wooden', 'under ৳1,500')..."
+                  className="w-full text-sm sm:text-lg bg-transparent text-[#24221F] placeholder-[#A8A49C] focus:outline-none"
                 />
                 {query && (
-                  <button onClick={() => setQuery('')} className="p-1 hover:bg-[#FAF7F1] rounded-full">
+                  <button onClick={() => setQuery('')} className="p-1 hover:bg-[#FAF7F1] rounded-full cursor-pointer shrink-0">
                     <X className="w-4 h-4 text-[#757169]" />
                   </button>
                 )}
                 <button
                   onClick={() => setSearchModalOpen(false)}
-                  className="text-xs font-semibold text-[#757169] hover:text-[#24221F] px-2 py-1 rounded-lg hover:bg-[#FAF7F1]"
+                  className="text-xs font-semibold text-[#757169] hover:text-[#24221F] px-2 py-1 rounded-lg hover:bg-[#FAF7F1] cursor-pointer shrink-0"
                 >
-                  ESC
+                  <span className="hidden sm:inline">ESC</span>
+                  <span className="sm:hidden">Close</span>
                 </button>
               </div>
 
               {/* Body */}
-              <div className="p-6 sm:p-8 max-h-[60vh] overflow-y-auto space-y-6">
+              <div className="p-4 sm:p-8 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto space-y-5 sm:space-y-6">
                 
                 {/* Quick Prompt Suggestions */}
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#757169] block mb-3">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#757169] block mb-2.5 sm:mb-3">
                     Try searching
                   </span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {popularSearches.map((term) => (
                       <motion.button
                         key={term}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.96 }}
                         onClick={() => handlePopularSearch(term)}
-                        className="px-3.5 py-1.5 rounded-full bg-white border border-[#E8E0D2] hover:border-[#1C4CB8] hover:text-[#1C4CB8] text-xs font-medium text-[#24221F] transition-colors flex items-center gap-1.5 shadow-2xs"
+                        className="px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white border border-[#E8E0D2] hover:border-[#1C4CB8] hover:text-[#1C4CB8] text-[11px] sm:text-xs font-medium text-[#24221F] transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
                       >
-                        <Sparkles className="w-3 h-3 text-[#A67E14]" />
+                        <Sparkles className="w-3 h-3 text-[#A67E14] shrink-0" />
                         <span>{term}</span>
                       </motion.button>
                     ))}

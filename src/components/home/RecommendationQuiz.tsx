@@ -91,30 +91,30 @@ export const RecommendationQuiz: React.FC = () => {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-[#1C4CB8] text-white relative overflow-hidden">
+    <section className="py-12 sm:py-20 md:py-28 bg-[#1C4CB8] text-white relative overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
         
         {/* Top Tracking */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold tracking-widest uppercase mb-4 text-[#F7E198]">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[11px] sm:text-xs font-semibold tracking-widest uppercase mb-3 sm:mb-4 text-[#F7E198]">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Interactive Discovery Finder</span>
         </div>
 
-        <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-3">
+        <h2 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-2 sm:mb-3">
           Not sure where to start?
         </h2>
 
-        <p className="text-base sm:text-lg text-white/80 max-w-lg mx-auto mb-10">
+        <p className="text-sm sm:text-lg text-white/80 max-w-lg mx-auto mb-8 sm:mb-10">
           Tell us a little about them. We'll curate the three most loved pieces for their stage.
         </p>
 
         {/* Step Progress Tracker */}
-        <div className="flex items-center justify-center gap-3 mb-10">
+        <div className="flex items-center justify-center gap-2.5 sm:gap-3 mb-8 sm:mb-10">
           {[1, 2, 3].map((s) => (
             <motion.div
               key={s}
               animate={{
-                width: step === s ? 48 : 24,
+                width: step === s ? 44 : 20,
                 backgroundColor: step === s ? '#FFFFFF' : step > s ? '#A3C1AD' : 'rgba(255, 255, 255, 0.2)',
               }}
               transition={{ duration: 0.3 }}
@@ -136,17 +136,17 @@ export const RecommendationQuiz: React.FC = () => {
               exit="exit"
               className="max-w-2xl mx-auto"
             >
-              <h3 className="text-xl sm:text-2xl font-serif font-semibold text-white mb-6">
+              <h3 className="text-lg sm:text-2xl font-serif font-semibold text-white mb-5 sm:mb-6">
                 Step 1: How old are they?
               </h3>
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                 {ages.map((age) => (
                   <motion.button
                     key={age}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => handleAgeSelect(age)}
-                    className="px-6 py-3.5 rounded-full bg-white text-[#24221F] text-sm font-semibold hover:bg-[#F7E198] transition-colors shadow-md"
+                    className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full bg-white text-[#24221F] text-xs sm:text-sm font-semibold hover:bg-[#F7E198] transition-colors shadow-md cursor-pointer"
                   >
                     {age}
                   </motion.button>
@@ -171,17 +171,17 @@ export const RecommendationQuiz: React.FC = () => {
                 <span>·</span>
                 <button onClick={() => handleBack(1)} className="underline hover:text-white">Change</button>
               </div>
-              <h3 className="text-xl sm:text-2xl font-serif font-semibold text-white mb-6">
+              <h3 className="text-lg sm:text-2xl font-serif font-semibold text-white mb-5 sm:mb-6">
                 Step 2: What do they love doing most?
               </h3>
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                 {interests.map((interest) => (
                   <motion.button
                     key={interest}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => handleInterestSelect(interest)}
-                    className="px-6 py-3.5 rounded-full bg-white text-[#24221F] text-sm font-semibold hover:bg-[#F7E198] transition-colors shadow-md"
+                    className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full bg-white text-[#24221F] text-xs sm:text-sm font-semibold hover:bg-[#F7E198] transition-colors shadow-md cursor-pointer"
                   >
                     {interest}
                   </motion.button>
@@ -206,17 +206,17 @@ export const RecommendationQuiz: React.FC = () => {
                 <span>·</span>
                 <button onClick={() => handleBack(2)} className="underline hover:text-white">Change</button>
               </div>
-              <h3 className="text-xl sm:text-2xl font-serif font-semibold text-white mb-6">
+              <h3 className="text-lg sm:text-2xl font-serif font-semibold text-white mb-5 sm:mb-6">
                 Step 3: What are you shopping for?
               </h3>
-              <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                 {occasions.map((occasion) => (
                   <motion.button
                     key={occasion}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => handleOccasionSelect(occasion)}
-                    className="px-6 py-3.5 rounded-full bg-white text-[#24221F] text-sm font-semibold hover:bg-[#F7E198] transition-colors shadow-md"
+                    className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full bg-white text-[#24221F] text-xs sm:text-sm font-semibold hover:bg-[#F7E198] transition-colors shadow-md cursor-pointer"
                   >
                     {occasion}
                   </motion.button>

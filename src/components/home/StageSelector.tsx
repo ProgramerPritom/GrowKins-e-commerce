@@ -25,22 +25,22 @@ export const StageSelector: React.FC = () => {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
+    <section className="py-12 sm:py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header with Direct Shop Redirect Action */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between max-w-4xl mx-auto mb-14 text-center sm:text-left gap-4">
-          <div className="space-y-3 mx-auto sm:mx-0 max-w-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between max-w-4xl mx-auto mb-10 sm:mb-14 text-center sm:text-left gap-4">
+          <div className="space-y-2 sm:space-y-3 mx-auto sm:mx-0 max-w-2xl">
             <div className="text-[11px] font-bold tracking-widest uppercase text-[#757169] flex items-center justify-center sm:justify-start gap-2">
               <Sparkles className="w-3.5 h-3.5 text-[#A67E14]" />
               <span>{t.stages.tag}</span>
             </div>
 
-            <h2 className="font-serif text-4xl sm:text-5xl font-bold tracking-tight text-[#24221F]">
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
               {t.stages.headline}
             </h2>
 
-            <p className="text-base sm:text-lg text-[#6E6A63]">
+            <p className="text-sm sm:text-lg text-[#6E6A63]">
               {t.stages.subheading}
             </p>
           </div>
@@ -50,7 +50,7 @@ export const StageSelector: React.FC = () => {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={handleGoToShop}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-[#D9D3C7] text-[#24221F] text-xs font-bold hover:bg-[#24221F] hover:text-white transition-all shadow-2xs self-center sm:self-end shrink-0 cursor-pointer group"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-white border border-[#D9D3C7] text-[#24221F] text-xs font-bold hover:bg-[#24221F] hover:text-white transition-all shadow-2xs self-center sm:self-end shrink-0 cursor-pointer group"
           >
             <Compass className="w-4 h-4 text-[#1C4CB8] group-hover:text-[#F7E198] transition-colors" />
             <span>{t.stages.seeMoreShop}</span>
@@ -59,10 +59,10 @@ export const StageSelector: React.FC = () => {
         </div>
 
         {/* Tactile Growth Timeline */}
-        <div className="relative max-w-3xl mx-auto mb-14 px-4">
+        <div className="relative max-w-3xl mx-auto mb-10 sm:mb-14 px-2 sm:px-4">
           
           {/* Horizontal connecting track */}
-          <div className="absolute top-5 left-8 right-8 h-1 bg-[#E8E0D2] -z-0 rounded-full" />
+          <div className="absolute top-4 sm:top-5 left-6 right-6 sm:left-8 sm:right-8 h-1 bg-[#E8E0D2] -z-0 rounded-full" />
           
           <div className="flex justify-between items-center relative z-10">
             {STAGES.map((stage) => {
@@ -71,20 +71,20 @@ export const StageSelector: React.FC = () => {
                 <button
                   key={stage.id}
                   onClick={() => setActiveStageId(stage.id)}
-                  className="flex flex-col items-center group cursor-pointer focus:outline-none relative"
+                  className="flex flex-col items-center group cursor-pointer focus:outline-none relative px-1"
                 >
                   {/* Circle Node */}
                   <motion.div 
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.94 }}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-colors duration-200 relative ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-[11px] sm:text-xs transition-colors duration-200 relative ${
                       isActive 
                         ? 'bg-[#1C4CB8] text-white shadow-md' 
                         : 'bg-white text-[#757169] border-2 border-[#E8E0D2] group-hover:border-[#1C4CB8] group-hover:text-[#1C4CB8]'
                     }`}
                   >
                     {isActive ? (
-                      <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                      <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white animate-pulse" />
                     ) : (
                       <span>{stage.label.replace('Y', '').replace('M', '')}</span>
                     )}
@@ -94,13 +94,13 @@ export const StageSelector: React.FC = () => {
                       <motion.div
                         layoutId="activeStageGlow"
                         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                        className="absolute inset-[-4px] rounded-full border-2 border-[#1C4CB8] pointer-events-none"
+                        className="absolute inset-[-3px] sm:inset-[-4px] rounded-full border-2 border-[#1C4CB8] pointer-events-none"
                       />
                     )}
                   </motion.div>
 
                   {/* Stage Label Underneath */}
-                  <span className={`mt-2 text-xs font-semibold tracking-wide transition-colors ${
+                  <span className={`mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-semibold tracking-tight sm:tracking-wide transition-colors ${
                     isActive ? 'text-[#1C4CB8]' : 'text-[#757169] group-hover:text-[#24221F]'
                   }`}>
                     {stage.label}
@@ -119,7 +119,7 @@ export const StageSelector: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
-            className="bg-[#E6EFE9] border border-[#C9DEC0] rounded-[28px] p-6 sm:p-10 shadow-sm"
+            className="bg-[#E6EFE9] border border-[#C9DEC0] rounded-[24px] sm:rounded-[28px] p-5 sm:p-10 shadow-sm"
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               

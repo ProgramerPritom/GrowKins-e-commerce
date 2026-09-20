@@ -26,38 +26,38 @@ export const TrendingSlider: React.FC = () => {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-[#FAF7F1] border-b border-[#E8E0D2]/60 overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-24 bg-[#FAF7F1] border-b border-[#E8E0D2]/60 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header with Navigation Arrows */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 md:mb-12 gap-4">
-          <div className="space-y-2 text-left">
+        <div className="flex flex-row items-end justify-between mb-6 sm:mb-12 gap-4">
+          <div className="space-y-1.5 sm:space-y-2 text-left max-w-xl">
             <div className="text-[11px] font-bold tracking-widest uppercase text-[#1C4CB8] flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-[#1C4CB8]" />
               <span>{t.trending.tag}</span>
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
+            <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
               {t.trending.headline}
             </h2>
-            <p className="text-sm sm:text-base text-[#6E6A63] max-w-xl">
+            <p className="text-xs sm:text-base text-[#6E6A63] line-clamp-2 sm:line-clamp-none">
               {t.trending.subheading}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => handleScroll('left')}
-              className="w-10 h-10 rounded-full border border-[#D9D3C7] bg-white text-[#24221F] hover:bg-[#F4EFE6] hover:border-[#24221F] flex items-center justify-center transition-all shadow-2xs active:scale-95"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[#D9D3C7] bg-white text-[#24221F] hover:bg-[#F4EFE6] hover:border-[#24221F] flex items-center justify-center transition-all shadow-2xs active:scale-95"
               aria-label="Previous trending slide"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={() => handleScroll('right')}
-              className="w-10 h-10 rounded-full border border-[#D9D3C7] bg-white text-[#24221F] hover:bg-[#F4EFE6] hover:border-[#24221F] flex items-center justify-center transition-all shadow-2xs active:scale-95"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[#D9D3C7] bg-white text-[#24221F] hover:bg-[#F4EFE6] hover:border-[#24221F] flex items-center justify-center transition-all shadow-2xs active:scale-95"
               aria-label="Next trending slide"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
@@ -65,13 +65,13 @@ export const TrendingSlider: React.FC = () => {
         {/* Horizontal Slider Track */}
         <div 
           ref={scrollRef}
-          className="flex gap-5 overflow-x-auto pb-6 scrollbar-none snap-x snap-mandatory text-left"
+          className="flex gap-4 sm:gap-5 overflow-x-auto pb-6 scrollbar-none snap-x snap-mandatory text-left -mx-4 px-4 sm:mx-0 sm:px-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {trendingProducts.map((product) => (
             <div
               key={product.id}
-              className="shrink-0 w-[270px] sm:w-[300px] snap-start group bg-white rounded-3xl p-4 border border-[#E8E0D2] shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+              className="shrink-0 w-[230px] sm:w-[290px] snap-start group bg-white rounded-3xl p-3.5 sm:p-4 border border-[#E8E0D2] shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
             >
               <div 
                 onClick={() => openProduct(product.id)}

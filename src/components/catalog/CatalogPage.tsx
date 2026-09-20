@@ -161,23 +161,23 @@ export const CatalogPage: React.FC = () => {
         </nav>
 
         {/* Category Introduction Header */}
-        <div className="text-left mb-8 max-w-3xl space-y-2">
+        <div className="text-left mb-6 sm:mb-8 max-w-3xl space-y-1.5 sm:space-y-2">
           <div className="text-[11px] font-bold tracking-widest uppercase text-[#757169]">
             {t.catalog.shelfTag}
           </div>
-          <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#24221F]">
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#24221F]">
             {t.catalog.headline}
           </h1>
-          <p className="text-base sm:text-lg text-[#6E6A63] leading-relaxed">
+          <p className="text-sm sm:text-lg text-[#6E6A63] leading-relaxed">
             {t.catalog.subheading}
           </p>
         </div>
 
         {/* Popular Filter Chips */}
-        <div className="flex flex-wrap items-center gap-2 mb-8">
+        <div className="flex flex-wrap items-center gap-2 mb-6 sm:mb-8">
           <button
             onClick={() => toggleArrayFilter('age', '3–5Y')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
+            className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
               filters.age.includes('3–5Y')
                 ? 'bg-[#24221F] text-white'
                 : 'bg-white text-[#24221F] border border-[#E8E0D2] hover:bg-[#F4EFE6]'
@@ -188,7 +188,7 @@ export const CatalogPage: React.FC = () => {
 
           <button
             onClick={() => toggleArrayFilter('occasion', 'Eid gift')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
+            className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
               filters.occasion.includes('Eid gift')
                 ? 'bg-[#24221F] text-white'
                 : 'bg-white text-[#24221F] border border-[#E8E0D2] hover:bg-[#F4EFE6]'
@@ -199,7 +199,7 @@ export const CatalogPage: React.FC = () => {
 
           <button
             onClick={() => toggleArrayFilter('occasion', 'Akika / New baby')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
+            className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
               filters.occasion.includes('Akika / New baby')
                 ? 'bg-[#24221F] text-white'
                 : 'bg-white text-[#24221F] border border-[#E8E0D2] hover:bg-[#F4EFE6]'
@@ -210,7 +210,7 @@ export const CatalogPage: React.FC = () => {
 
           <button
             onClick={() => setFilter('maxPrice', filters.maxPrice === 1500 ? 5000 : 1500)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
+            className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
               filters.maxPrice === 1500
                 ? 'bg-[#24221F] text-white'
                 : 'bg-white text-[#24221F] border border-[#E8E0D2] hover:bg-[#F4EFE6]'
@@ -222,7 +222,7 @@ export const CatalogPage: React.FC = () => {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="px-3.5 py-2 rounded-full text-xs font-medium text-[#D96F58] hover:bg-[#FCE8E3] flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs font-medium text-[#D96F58] hover:bg-[#FCE8E3] flex items-center gap-1 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>{t.catalog.clearFilters}</span>
@@ -231,22 +231,22 @@ export const CatalogPage: React.FC = () => {
         </div>
 
         {/* Counter and Sort Bar */}
-        <div className="flex items-center justify-between py-4 border-y border-[#E8E0D2] mb-8">
-          <div className="text-sm font-medium text-[#6E6A63]">
+        <div className="flex flex-row items-center justify-between py-3.5 sm:py-4 border-y border-[#E8E0D2] mb-6 sm:mb-8 gap-2">
+          <div className="text-xs sm:text-sm font-medium text-[#6E6A63]">
             {sortedProducts.length > 0 ? (
               <span>
-                Showing <strong className="text-[#24221F]">{startIndex + 1}–{endIndex}</strong> of <strong className="text-[#24221F]">{sortedProducts.length}</strong> {t.catalog.showing}
+                <strong className="text-[#24221F]">{sortedProducts.length}</strong> {t.catalog.showing}
               </span>
             ) : (
               <span>0 {t.catalog.showing}</span>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Mobile Filter Trigger */}
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden px-4 py-2 rounded-full bg-white border border-[#E8E0D2] text-xs font-semibold text-[#24221F] flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="lg:hidden px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white border border-[#E8E0D2] text-xs font-semibold text-[#24221F] flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <span>{t.catalog.filters} {hasActiveFilters && '•'}</span>
@@ -257,14 +257,14 @@ export const CatalogPage: React.FC = () => {
               <select
                 value={filters.sortBy}
                 onChange={(e) => setFilter('sortBy', e.target.value as any)}
-                className="appearance-none bg-white border border-[#E8E0D2] rounded-full pl-4 pr-9 py-2 text-xs font-semibold text-[#24221F] focus:outline-none focus:ring-1 focus:ring-[#1C4CB8] shadow-2xs cursor-pointer"
+                className="appearance-none bg-white border border-[#E8E0D2] rounded-full pl-3.5 pr-8 sm:pl-4 sm:pr-9 py-1.5 sm:py-2 text-xs font-semibold text-[#24221F] focus:outline-none focus:ring-1 focus:ring-[#1C4CB8] shadow-2xs cursor-pointer"
               >
                 <option value="featured">{t.catalog.featured}</option>
                 <option value="price-low">{t.catalog.priceLow}</option>
                 <option value="price-high">{t.catalog.priceHigh}</option>
                 <option value="rating">{t.catalog.rating}</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#757169] absolute right-3 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#757169] absolute right-2.5 sm:right-3 pointer-events-none" />
             </div>
           </div>
         </div>
@@ -400,8 +400,9 @@ export const CatalogPage: React.FC = () => {
           {/* Products Grid & Pagination (Item 4) */}
           <main className="lg:col-span-9">
             {sortedProducts.length > 0 ? (
-              <div className="space-y-10">
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="space-y-8 sm:space-y-10">
+                {/* 2-column mobile grid, 3-column desktop */}
+                <motion.div layout className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6 lg:gap-8">
                   <AnimatePresence>
                     {paginatedProducts.map((product) => (
                       <ProductCard key={product.id} product={product} />
@@ -411,17 +412,17 @@ export const CatalogPage: React.FC = () => {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="pt-8 border-t border-[#E8E0D2] flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="pt-6 sm:pt-8 border-t border-[#E8E0D2] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
                     <div className="text-xs text-[#757169]">
                       {t.catalog.page} <strong className="text-[#24221F]">{currentPage}</strong> {t.catalog.of} <strong className="text-[#24221F]">{totalPages}</strong>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-center">
                       {/* Previous Page Button */}
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3.5 py-2 rounded-full border border-[#D9D3C7] bg-white text-xs font-semibold text-[#24221F] hover:bg-[#F4EFE6] disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border border-[#D9D3C7] bg-white text-xs font-semibold text-[#24221F] hover:bg-[#F4EFE6] disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
                         aria-label="Previous page"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
@@ -434,7 +435,7 @@ export const CatalogPage: React.FC = () => {
                           <button
                             key={pageNum}
                             onClick={() => handlePageChange(pageNum)}
-                            className={`w-8 h-8 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs font-bold transition-all cursor-pointer ${
                               pageNum === currentPage
                                 ? 'bg-[#24221F] text-white shadow-sm'
                                 : 'bg-white text-[#757169] border border-[#E8E0D2] hover:bg-[#F4EFE6] hover:text-[#24221F]'
@@ -451,7 +452,7 @@ export const CatalogPage: React.FC = () => {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3.5 py-2 rounded-full border border-[#D9D3C7] bg-white text-xs font-semibold text-[#24221F] hover:bg-[#F4EFE6] disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border border-[#D9D3C7] bg-white text-xs font-semibold text-[#24221F] hover:bg-[#F4EFE6] disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
                         aria-label="Next page"
                       >
                         <span>{t.catalog.next}</span>
@@ -462,7 +463,7 @@ export const CatalogPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-[28px] border border-[#E8E0D2] p-12 text-center max-w-md mx-auto space-y-4 shadow-xs">
+              <div className="bg-white rounded-[24px] sm:rounded-[28px] border border-[#E8E0D2] p-8 sm:p-12 text-center max-w-md mx-auto space-y-4 shadow-xs">
                 <div className="w-12 h-12 rounded-full bg-[#FCF4DB] text-[#A67E14] flex items-center justify-center mx-auto">
                   <Sparkles className="w-6 h-6" />
                 </div>
@@ -502,15 +503,16 @@ export const CatalogPage: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="bg-[#FAF7F1] rounded-t-[32px] p-6 max-h-[85vh] overflow-y-auto space-y-6 relative z-10 text-left"
+              className="bg-[#FAF7F1] rounded-t-[28px] p-5 sm:p-6 max-h-[85vh] overflow-y-auto space-y-5 relative z-10 text-left"
             >
-              <div className="flex items-center justify-between border-b border-[#E8E0D2] pb-4">
-                <h2 className="font-serif text-xl font-bold text-[#24221F]">
+              <div className="flex items-center justify-between border-b border-[#E8E0D2] pb-3.5">
+                <h2 className="font-serif text-lg sm:text-xl font-bold text-[#24221F]">
                   {t.catalog.filters}
                 </h2>
                 <button
                   onClick={() => setMobileFilterOpen(false)}
-                  className="p-2 rounded-full hover:bg-[#F4EFE6] cursor-pointer"
+                  className="p-1.5 rounded-full hover:bg-[#F4EFE6] cursor-pointer"
+                  aria-label="Close filters"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -518,7 +520,7 @@ export const CatalogPage: React.FC = () => {
 
               {/* Mobile Age Options */}
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#24221F] mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#24221F] mb-2.5">
                   Age
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -526,7 +528,7 @@ export const CatalogPage: React.FC = () => {
                     <button
                       key={age}
                       onClick={() => toggleArrayFilter('age', age)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
                         filters.age.includes(age)
                           ? 'bg-[#24221F] text-white border-[#24221F]'
                           : 'bg-white text-[#24221F] border-[#E8E0D2]'
@@ -540,7 +542,7 @@ export const CatalogPage: React.FC = () => {
 
               {/* Mobile Categories */}
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#24221F] mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#24221F] mb-2.5">
                   Category
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -548,7 +550,7 @@ export const CatalogPage: React.FC = () => {
                     <button
                       key={cat}
                       onClick={() => toggleArrayFilter('category', cat)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
                         filters.category.includes(cat)
                           ? 'bg-[#24221F] text-white border-[#24221F]'
                           : 'bg-white text-[#24221F] border-[#E8E0D2]'
@@ -560,16 +562,85 @@ export const CatalogPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#E8E0D2] flex items-center gap-3">
+              {/* Mobile Occasions */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#24221F] mb-2.5">
+                  Occasion
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {occasionOptions.map((occ) => (
+                    <button
+                      key={occ}
+                      onClick={() => toggleArrayFilter('occasion', occ)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
+                        filters.occasion.includes(occ)
+                          ? 'bg-[#24221F] text-white border-[#24221F]'
+                          : 'bg-white text-[#24221F] border-[#E8E0D2]'
+                      }`}
+                    >
+                      {occ}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile Developmental Benefits */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#24221F] mb-2.5">
+                  Developmental Benefit
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {benefitOptions.map((benefit) => (
+                    <button
+                      key={benefit}
+                      onClick={() => toggleArrayFilter('benefit', benefit)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
+                        filters.benefit.includes(benefit)
+                          ? 'bg-[#24221F] text-white border-[#24221F]'
+                          : 'bg-white text-[#24221F] border-[#E8E0D2]'
+                      }`}
+                    >
+                      {benefit}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile Price & In-stock */}
+              <div className="pt-2 border-t border-[#E8E0D2] flex items-center justify-between">
+                <button
+                  onClick={() => setFilter('maxPrice', filters.maxPrice === 1500 ? 5000 : 1500)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border cursor-pointer ${
+                    filters.maxPrice === 1500
+                      ? 'bg-[#24221F] text-white border-[#24221F]'
+                      : 'bg-white text-[#24221F] border-[#E8E0D2]'
+                  }`}
+                >
+                  Under ৳1,500
+                </button>
+
+                <label className="flex items-center gap-2 text-xs text-[#24221F] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={filters.inStockOnly}
+                    onChange={(e) => setFilter('inStockOnly', e.target.checked)}
+                    className="w-4 h-4 rounded border-[#D9D3C7] text-[#1C4CB8]"
+                  />
+                  <span>In stock only</span>
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-[#E8E0D2] flex items-center gap-3">
                 <button
                   onClick={resetFilters}
-                  className="flex-1 py-3 rounded-full bg-white border border-[#E8E0D2] text-xs font-semibold text-[#24221F] cursor-pointer"
+                  className="flex-1 py-2.5 sm:py-3 rounded-full bg-white border border-[#E8E0D2] text-xs font-semibold text-[#24221F] cursor-pointer hover:bg-[#F4EFE6]"
                 >
                   Reset
                 </button>
                 <button
                   onClick={() => setMobileFilterOpen(false)}
-                  className="flex-2 py-3 rounded-full bg-[#24221F] text-white text-xs font-semibold cursor-pointer"
+                  className="flex-2 py-2.5 sm:py-3 rounded-full bg-[#24221F] text-white text-xs font-semibold cursor-pointer hover:bg-[#1C4CB8]"
                 >
                   Show {sortedProducts.length} results
                 </button>

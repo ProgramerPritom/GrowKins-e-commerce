@@ -107,34 +107,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
 
-  // Cart state persisted to localStorage
+  // Cart state persisted to localStorage (starts empty until user adds items)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('growkins_cart_bd') || localStorage.getItem('littlekin_cart_bd');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Clean out legacy mock starter items if present
+        const isLegacyStarter = Array.isArray(parsed) &&
+          parsed.length === 2 &&
+          parsed.some(item => item?.product?.id === 'woodland-balance-friends') &&
+          parsed.some(item => item?.product?.id === 'sunrise-stacking-arch');
+        if (!isLegacyStarter && Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
     } catch {
       // fallback
     }
-    const initialProduct1 = PRODUCTS.find(p => p.id === 'woodland-balance-friends');
-    const initialProduct2 = PRODUCTS.find(p => p.id === 'sunrise-stacking-arch');
-    const starter: CartItem[] = [];
-    if (initialProduct1) starter.push({ product: initialProduct1, quantity: 1 });
-    if (initialProduct2) starter.push({ product: initialProduct2, quantity: 1 });
-    return starter;
+    return [];
   });
 
   const [isGift, setIsGift] = useState(false);
   const [giftRecipient, setGiftRecipient] = useState('');
   const [giftMessage, setGiftMessage] = useState('');
 
+  // Wishlist state persisted to localStorage (starts empty until user hearts items)
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('growkins_wishlist_bd') || localStorage.getItem('littlekin_wishlist_bd');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Clean out legacy mock starter item if present
+        const isLegacyStarter = Array.isArray(parsed) &&
+          parsed.length === 1 &&
+          parsed[0] === 'little-architect-blocks';
+        if (!isLegacyStarter && Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
     } catch {
       // fallback
     }
-    return ['little-architect-blocks'];
+    return [];
   });
 
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -176,6 +191,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       localStorage.setItem('growkins_cart_bd', JSON.stringify(cartItems));
+      localStorage.removeItem('littlekin_cart_bd');
     } catch (e) {
       console.warn(e);
     }
@@ -184,6 +200,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       localStorage.setItem('growkins_wishlist_bd', JSON.stringify(wishlist));
+      localStorage.removeItem('littlekin_wishlist_bd');
     } catch (e) {
       console.warn(e);
     }
@@ -192,6 +209,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       localStorage.setItem('growkins_delivery_bd', JSON.stringify(deliveryDetails));
+      localStorage.removeItem('littlekin_delivery_bd');
     } catch (e) {
       console.warn(e);
     }
