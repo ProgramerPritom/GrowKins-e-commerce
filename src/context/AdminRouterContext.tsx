@@ -43,6 +43,14 @@ export const AdminRouterProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     }
 
+    // /admin/clothing/products/:id/edit or /admin/clothing/products/:id
+    if (segments[0] === 'admin' && segments[1] === 'clothing' && segments[2] === 'products' && segments[3] && segments[3] !== 'new') {
+      params.id = segments[3];
+      if (segments[4] === 'edit') {
+        params.action = 'edit';
+      }
+    }
+
     // /admin/categories/:id/edit
     if (segments[0] === 'admin' && segments[1] === 'categories' && segments[2] && segments[2] !== 'new') {
       params.id = segments[2];

@@ -13,6 +13,14 @@ import type {
   StoreSettings,
   CheckoutSettings
 } from '../../types/admin';
+import type {
+  ApparelProduct,
+  ApparelCategory,
+  ApparelCollection,
+  FashionLook,
+  SizeGuide,
+  ClothingHomepageCMS
+} from '../../types/clothing';
 
 import {
   INITIAL_PRODUCTS,
@@ -30,6 +38,15 @@ import {
   INITIAL_CHECKOUT_SETTINGS
 } from './seedData';
 
+import { CLOTHING_PRODUCTS } from '../../data/clothingProducts';
+import {
+  CLOTHING_CATEGORIES,
+  CLOTHING_COLLECTIONS,
+  FASHION_LOOKS,
+  SIZE_GUIDES,
+  INITIAL_CLOTHING_HOMEPAGE_CMS
+} from '../../data/clothingContent';
+
 type DbEntity =
   | 'products'
   | 'categories'
@@ -43,7 +60,13 @@ type DbEntity =
   | 'footer'
   | 'delivery'
   | 'storeSettings'
-  | 'checkoutSettings';
+  | 'checkoutSettings'
+  | 'clothingProducts'
+  | 'clothingCategories'
+  | 'clothingCollections'
+  | 'clothingLooks'
+  | 'clothingSizeGuides'
+  | 'clothingHomepage';
 
 type Listener = (entity: DbEntity) => void;
 
@@ -144,6 +167,27 @@ class MockDatabaseService {
     if (!localStorage.getItem(this.getKey('checkoutSettings'))) {
       this.setItem('checkoutSettings', INITIAL_CHECKOUT_SETTINGS);
     }
+
+    // Clothing Entities
+    const currentClothing = this.getItem<ApparelProduct[]>('clothingProducts', []);
+    if (currentClothing.length === 0) {
+      this.setItem('clothingProducts', CLOTHING_PRODUCTS);
+    }
+    if (!localStorage.getItem(this.getKey('clothingCategories'))) {
+      this.setItem('clothingCategories', CLOTHING_CATEGORIES);
+    }
+    if (!localStorage.getItem(this.getKey('clothingCollections'))) {
+      this.setItem('clothingCollections', CLOTHING_COLLECTIONS);
+    }
+    if (!localStorage.getItem(this.getKey('clothingLooks'))) {
+      this.setItem('clothingLooks', FASHION_LOOKS);
+    }
+    if (!localStorage.getItem(this.getKey('clothingSizeGuides'))) {
+      this.setItem('clothingSizeGuides', SIZE_GUIDES);
+    }
+    if (!localStorage.getItem(this.getKey('clothingHomepage'))) {
+      this.setItem('clothingHomepage', INITIAL_CLOTHING_HOMEPAGE_CMS);
+    }
   }
 
   public resetToSeeds(): void {
@@ -160,6 +204,13 @@ class MockDatabaseService {
     this.setItem('delivery', INITIAL_DELIVERY_SETTINGS);
     this.setItem('storeSettings', INITIAL_STORE_SETTINGS);
     this.setItem('checkoutSettings', INITIAL_CHECKOUT_SETTINGS);
+
+    this.setItem('clothingProducts', CLOTHING_PRODUCTS);
+    this.setItem('clothingCategories', CLOTHING_CATEGORIES);
+    this.setItem('clothingCollections', CLOTHING_COLLECTIONS);
+    this.setItem('clothingLooks', FASHION_LOOKS);
+    this.setItem('clothingSizeGuides', SIZE_GUIDES);
+    this.setItem('clothingHomepage', INITIAL_CLOTHING_HOMEPAGE_CMS);
   }
 
   // Products
@@ -264,6 +315,54 @@ class MockDatabaseService {
   }
   public setCheckoutSettings(settings: CheckoutSettings): void {
     this.setItem('checkoutSettings', settings);
+  }
+
+  // Clothing Products
+  public getClothingProducts(): ApparelProduct[] {
+    return this.getItem<ApparelProduct[]>('clothingProducts', CLOTHING_PRODUCTS);
+  }
+  public setClothingProducts(products: ApparelProduct[]): void {
+    this.setItem('clothingProducts', products);
+  }
+
+  // Clothing Categories
+  public getClothingCategories(): ApparelCategory[] {
+    return this.getItem<ApparelCategory[]>('clothingCategories', CLOTHING_CATEGORIES);
+  }
+  public setClothingCategories(categories: ApparelCategory[]): void {
+    this.setItem('clothingCategories', categories);
+  }
+
+  // Clothing Collections
+  public getClothingCollections(): ApparelCollection[] {
+    return this.getItem<ApparelCollection[]>('clothingCollections', CLOTHING_COLLECTIONS);
+  }
+  public setClothingCollections(collections: ApparelCollection[]): void {
+    this.setItem('clothingCollections', collections);
+  }
+
+  // Clothing Looks
+  public getClothingLooks(): FashionLook[] {
+    return this.getItem<FashionLook[]>('clothingLooks', FASHION_LOOKS);
+  }
+  public setClothingLooks(looks: FashionLook[]): void {
+    this.setItem('clothingLooks', looks);
+  }
+
+  // Clothing Size Guides
+  public getClothingSizeGuides(): SizeGuide[] {
+    return this.getItem<SizeGuide[]>('clothingSizeGuides', SIZE_GUIDES);
+  }
+  public setClothingSizeGuides(guides: SizeGuide[]): void {
+    this.setItem('clothingSizeGuides', guides);
+  }
+
+  // Clothing Homepage CMS
+  public getClothingHomepageCMS(): ClothingHomepageCMS {
+    return this.getItem<ClothingHomepageCMS>('clothingHomepage', INITIAL_CLOTHING_HOMEPAGE_CMS);
+  }
+  public setClothingHomepageCMS(cms: ClothingHomepageCMS): void {
+    this.setItem('clothingHomepage', cms);
   }
 }
 

@@ -528,7 +528,7 @@ export const CheckoutPage: React.FC = () => {
 
                     <div className="divide-y divide-[#FAF7F1]">
                       {cartItems.map((item) => (
-                        <div key={item.product.id} className="py-3 flex items-center justify-between gap-3 sm:gap-4">
+                        <div key={item.id || item.product.id} className="py-3 flex items-center justify-between gap-3 sm:gap-4">
                           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                             <img
                               src={item.product.images.main}
@@ -537,11 +537,19 @@ export const CheckoutPage: React.FC = () => {
                             />
                             <div className="min-w-0">
                               <div className="font-semibold text-xs sm:text-sm text-[#24221F] truncate">{item.product.name}</div>
-                              <div className="text-[11px] sm:text-xs text-[#757169] font-sans">{item.quantity}× · ৳{item.product.price} each</div>
+                              {item.variant && (
+                                <div className="text-[10px] font-medium text-[#C85A32] flex items-center gap-1.5">
+                                  {item.variant.color && <span>{item.variant.color.name}</span>}
+                                  {item.variant.size && <span className="font-bold border border-[#C85A32]/20 bg-[#FAF3EE] px-1 rounded">Size: {item.variant.size.label}</span>}
+                                </div>
+                              )}
+                              <div className="text-[11px] sm:text-xs text-[#757169] font-sans">
+                                {item.quantity}× · ৳{item.variant?.price || item.product.price} each
+                              </div>
                             </div>
                           </div>
                           <span className="font-bold text-xs sm:text-sm text-[#24221F] font-sans shrink-0">
-                            ৳{item.product.price * item.quantity}
+                            ৳{(item.variant?.price || item.product.price) * item.quantity}
                           </span>
                         </div>
                       ))}

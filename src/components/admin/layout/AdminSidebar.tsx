@@ -19,7 +19,9 @@ import {
   Navigation,
   FileText,
   ShieldCheck,
-  Quote
+  Quote,
+  Shirt,
+  Ruler
 } from 'lucide-react';
 import { useAdminRouter } from '../../../context/AdminRouterContext';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
@@ -58,6 +60,19 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         { label: 'Products', path: '/admin/products', icon: Package },
         { label: 'Categories', path: '/admin/categories', icon: FolderTree },
         { label: 'Collections', path: '/admin/collections', icon: Layers },
+      ]
+    },
+    {
+      group: 'Fashion',
+      items: [
+        { label: 'Clothing Overview', path: '/admin/clothing', icon: LayoutDashboard },
+        { label: 'Clothing Products', path: '/admin/clothing/products', icon: Shirt },
+        { label: 'Variant Inventory', path: '/admin/clothing/inventory', icon: Sliders },
+        { label: 'Clothing Categories', path: '/admin/clothing/categories', icon: FolderTree },
+        { label: 'Collections', path: '/admin/clothing/collections', icon: Layers },
+        { label: 'Looks & Hotspots', path: '/admin/clothing/lookbooks', icon: ImageIcon },
+        { label: 'Size Guides', path: '/admin/clothing/size-guides', icon: Ruler },
+        { label: 'Clothing Homepage', path: '/admin/clothing/content/homepage', icon: Sparkles },
       ]
     },
     {

@@ -54,9 +54,9 @@ interface StoreContextType {
   // Cart
   cartItems: CartItem[];
   cartCount: number;
-  addToCart: (product: Product, quantity?: number) => void;
-  updateQuantity: (productId: string, delta: number) => void;
-  removeFromCart: (productId: string) => void;
+  addToCart: (product: Product | any, quantity?: number, variant?: any) => void;
+  updateQuantity: (cartItemIdOrProductId: string, delta: number) => void;
+  removeFromCart: (cartItemIdOrProductId: string) => void;
   clearCart: () => void;
   subtotal: number;
   freeShippingThreshold: number;
@@ -232,27 +232,62 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setView('product');
   };
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product | any, quantity = 1, variant?: any) => {
+    // Normalize images if it's an apparel product with array of images
+    let normalizedProduct = product;
+    if (Array.isArray(product.images)) {
+      const colorImg = variant?.color?.id
+        ? product.images.find((img: any) => img.colorId === variant.color.id)?.url
+        : null;
+      const mainUrl = colorImg || product.images[0]?.url || '';
+      normalizedProduct = {
+        ...product,
+        images: {
+          main: mainUrl,
+          secondary: product.images[1]?.url || mainUrl,
+          gallery: product.images.map((img: any) => img.url)
+        }
+      };
+    }
+
+    const lineId = variant?.sku ? `${product.id}-${variant.sku}` : (product.id || `item-${Date.now()}`);
+
     setCartItems(prev => {
-      const existing = prev.find(item => item.product.id === product.id);
+      const existing = prev.find(item => (item.id || item.product.id) === lineId);
       if (existing) {
         return prev.map(item =>
-          item.product.id === product.id
+          (item.id || item.product.id) === lineId
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [
+        ...prev,
+        {
+          id: lineId,
+          product: normalizedProduct,
+          quantity,
+          variant: variant ? {
+            sku: variant.sku,
+            color: variant.color,
+            size: variant.size,
+            price: variant.price || product.price
+          } : undefined
+        }
+      ];
     });
-    showToast(`"${product.name}" added to your bag`);
+
+    const variantLabel = variant?.size?.label ? ` (${variant.size.label})` : '';
+    showToast(`"${product.name}${variantLabel}" added to your bag`);
     setCartDrawerOpen(true);
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (lineIdOrProductId: string, delta: number) => {
     setCartItems(prev => {
       return prev
         .map(item => {
-          if (item.product.id === productId) {
+          const match = item.id === lineIdOrProductId || (!item.id && item.product.id === lineIdOrProductId);
+          if (match) {
             const nextQty = item.quantity + delta;
             return nextQty > 0 ? { ...item, quantity: nextQty } : null;
           }
@@ -262,8 +297,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems(prev => prev.filter(item => item.product.id !== productId));
+  const removeFromCart = (lineIdOrProductId: string) => {
+    setCartItems(prev => {
+      const hasExactId = prev.some(item => item.id === lineIdOrProductId);
+      if (hasExactId) {
+        return prev.filter(item => item.id !== lineIdOrProductId);
+      }
+      return prev.filter(item => item.product.id !== lineIdOrProductId);
+    });
     showToast('Item removed from bag');
   };
 
@@ -272,7 +313,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.variant?.price || item.product.price) * item.quantity, 0);
   
   // Delivery Fee & Threshold from MockDatabase settings with safe fallback (70/130, 2500)
   let freeShippingThreshold = 2500;
@@ -392,11 +433,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         items: cartItems.map(item => ({
           productId: item.product.id,
           name: item.product.name,
-          sku: `GK-${item.product.id.substring(0, 5).toUpperCase()}`,
-          price: item.product.price,
+          sku: item.variant?.sku || `GK-${item.product.id.substring(0, 5).toUpperCase()}`,
+          price: item.variant?.price || item.product.price,
           quantity: item.quantity,
           image: item.product.images.main || '',
-          total: item.product.price * item.quantity
+          total: (item.variant?.price || item.product.price) * item.quantity,
+          variant: item.variant ? {
+            color: item.variant.color?.name,
+            size: item.variant.size?.label,
+            sku: item.variant.sku
+          } : undefined
         })),
         subtotal,
         deliveryFee,

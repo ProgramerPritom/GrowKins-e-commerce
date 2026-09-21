@@ -91,7 +91,7 @@ export const FullCartPage: React.FC = () => {
               <AnimatePresence>
                 {cartItems.map((item) => (
                   <motion.div
-                    key={item.product.id}
+                    key={item.id || item.product.id}
                     layout
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -107,17 +107,32 @@ export const FullCartPage: React.FC = () => {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-mono text-[#757169] uppercase tracking-wider block">
-                          {item.product.ageBadge}
-                        </span>
+                        {item.variant ? (
+                          <div className="flex items-center gap-1.5 mb-1">
+                            {item.variant.color && (
+                              <span className="text-[10px] font-medium text-[#757169] bg-[#F4EFE6] px-2 py-0.5 rounded">
+                                {item.variant.color.name}
+                              </span>
+                            )}
+                            {item.variant.size && (
+                              <span className="text-[10px] font-bold text-[#C85A32] bg-[#FAF3EE] px-2 py-0.5 rounded border border-[#C85A32]/20">
+                                {item.variant.size.label}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-mono text-[#757169] uppercase tracking-wider block">
+                            {item.product.ageBadge}
+                          </span>
+                        )}
                         <h3 className="font-serif font-bold text-sm sm:text-base text-[#24221F] truncate">
                           {item.product.name}
                         </h3>
                         <p className="text-xs text-[#757169] mt-0.5 line-clamp-1">
-                          {item.product.valueStatement}
+                          {item.product.valueStatement || item.product.subtitle || ''}
                         </p>
                         <span className="text-xs font-semibold text-[#24221F] sm:hidden block mt-1 font-sans">
-                          ৳{item.product.price} each
+                          ৳{item.variant?.price || item.product.price} each
                         </span>
                       </div>
                     </div>
@@ -126,7 +141,7 @@ export const FullCartPage: React.FC = () => {
                       <div className="flex items-center border border-[#D9D3C7] rounded-full px-2.5 sm:px-3 py-1 bg-[#FAF7F1]">
                         <motion.button
                           whileTap={{ scale: 0.85 }}
-                          onClick={() => updateQuantity(item.product.id, -1)}
+                          onClick={() => updateQuantity(item.id || item.product.id, -1)}
                           className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] cursor-pointer"
                         >
                           <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -136,7 +151,7 @@ export const FullCartPage: React.FC = () => {
                         </span>
                         <motion.button
                           whileTap={{ scale: 0.85 }}
-                          onClick={() => updateQuantity(item.product.id, 1)}
+                          onClick={() => updateQuantity(item.id || item.product.id, 1)}
                           className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[#757169] hover:text-[#24221F] cursor-pointer"
                         >
                           <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -145,16 +160,16 @@ export const FullCartPage: React.FC = () => {
 
                       <div className="text-right">
                         <div className="font-bold text-sm sm:text-base text-[#24221F] font-sans">
-                          ৳{item.product.price * item.quantity}
+                          ৳{(item.variant?.price || item.product.price) * item.quantity}
                         </div>
                         <div className="hidden sm:block text-[11px] text-[#A8A49C] font-sans">
-                          ৳{item.product.price} each
+                          ৳{item.variant?.price || item.product.price} each
                         </div>
                       </div>
 
                       <motion.button
                         whileTap={{ scale: 0.85 }}
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => removeFromCart(item.id || item.product.id)}
                         className="text-[#A8A49C] hover:text-[#D96F58] p-1.5 transition-colors cursor-pointer"
                         title="Remove item"
                       >

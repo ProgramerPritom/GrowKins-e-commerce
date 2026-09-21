@@ -123,7 +123,7 @@ export const CartDrawer: React.FC = () => {
                     <AnimatePresence>
                       {cartItems.map((item, idx) => (
                         <motion.div 
-                          key={item.product.id}
+                          key={item.id || item.product.id}
                           initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
@@ -146,23 +146,38 @@ export const CartDrawer: React.FC = () => {
                                 </h3>
                                 <motion.button
                                   whileTap={{ scale: 0.85 }}
-                                  onClick={() => removeFromCart(item.product.id)}
+                                  onClick={() => removeFromCart(item.id || item.product.id)}
                                   className="text-[#A8A49C] hover:text-[#D96F58] p-1 transition-colors cursor-pointer shrink-0"
                                   title="Remove item"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </motion.button>
                               </div>
-                              <span className="text-[10px] sm:text-[11px] font-mono text-[#757169] block">
-                                {item.product.ageBadge}
-                              </span>
+                              {item.variant ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {item.variant.color && (
+                                    <span className="text-[10px] font-medium text-[#757169] bg-[#F4EFE6] px-1.5 py-0.5 rounded">
+                                      {item.variant.color.name}
+                                    </span>
+                                  )}
+                                  {item.variant.size && (
+                                    <span className="text-[10px] font-bold text-[#C85A32] bg-[#FAF3EE] px-1.5 py-0.5 rounded border border-[#C85A32]/20">
+                                      {item.variant.size.label}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[10px] sm:text-[11px] font-mono text-[#757169] block">
+                                  {item.product.ageBadge}
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center justify-between pt-1.5 sm:pt-2">
                               <div className="flex items-center border border-[#E8E0D2] rounded-full px-1.5 sm:px-2 py-0.5 bg-[#FAF7F1]">
                                 <motion.button
                                   whileTap={{ scale: 0.85 }}
-                                  onClick={() => updateQuantity(item.product.id, -1)}
+                                  onClick={() => updateQuantity(item.id || item.product.id, -1)}
                                   className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[#757169] hover:text-[#24221F] cursor-pointer"
                                 >
                                   <Minus className="w-3 h-3" />
@@ -172,7 +187,7 @@ export const CartDrawer: React.FC = () => {
                                 </span>
                                 <motion.button
                                   whileTap={{ scale: 0.85 }}
-                                  onClick={() => updateQuantity(item.product.id, 1)}
+                                  onClick={() => updateQuantity(item.id || item.product.id, 1)}
                                   className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[#757169] hover:text-[#24221F] cursor-pointer"
                                 >
                                   <Plus className="w-3 h-3" />
@@ -180,7 +195,7 @@ export const CartDrawer: React.FC = () => {
                               </div>
 
                               <span className="font-bold text-xs sm:text-sm text-[#24221F] font-sans">
-                                ৳{item.product.price * item.quantity}
+                                ৳{(item.variant?.price || item.product.price) * item.quantity}
                               </span>
                             </div>
                           </div>

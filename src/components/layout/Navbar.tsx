@@ -153,6 +153,18 @@ export const Navbar: React.FC = () => {
             >
               {t.nav.ourStory}
             </button>
+
+            {/* Direct Bridge into The Little Wardrobe Fashion Boutique */}
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/clothing');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#171715] text-[#FCFAF7] hover:bg-[#C85A32] text-xs font-bold transition-all shadow-2xs cursor-pointer ml-1"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#EBD699]" />
+              <span>The Little Wardrobe</span>
+            </button>
           </nav>
 
           {/* Right: Actions (Language Switcher, Search, Wishlist, Bag) */}
@@ -348,6 +360,22 @@ export const Navbar: React.FC = () => {
                         className="w-full text-left font-serif text-xl text-[#24221F] py-2.5 border-b border-[#E8E0D2]/50 hover:text-[#1C4CB8] transition-colors cursor-pointer"
                       >
                         {t.nav.ourStory}
+                      </button>
+
+                      {/* Little Wardrobe Mobile Link */}
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          window.history.pushState({}, '', '/clothing');
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        }}
+                        className="w-full mt-3 p-3 rounded-2xl bg-[#171715] text-[#FCFAF7] flex items-center justify-between font-serif text-base font-bold shadow-xs cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#EBD699]" />
+                          <span>The Little Wardrobe Boutique</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-[#E6DFD5] uppercase">Explore →</span>
                       </button>
                     </div>
                   </div>

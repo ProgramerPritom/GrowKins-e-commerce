@@ -68,3 +68,95 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* 
+==================================================
+SCOPED THEME ARCHITECTURE: PLAYROOM VS FASHION
+================================================== 
+*/
+
+[data-store-theme="play"] {
+  --store-bg: #FAF7F1;
+  --store-surface: #FFFFFF;
+  --store-text: #24221F;
+  --store-accent: #1C4CB8;
+  --store-coral: #F28F79;
+  --store-border: #E8E0D2;
+}
+
+[data-store-theme="fashion"] {
+  --store-bg: #F7F4EE;
+  --store-surface: #FCFAF7;
+  --store-card: #FFFFFF;
+  --store-text: #171715;
+  --store-text-subtle: #4D4A43;
+  --store-text-muted: #857E73;
+  --store-accent: #C85A32;
+  --store-accent-hover: #B24E2A;
+  --store-accent-soft: #F9EFE9;
+  --store-border: #E8E2D5;
+  --store-border-light: #F2ECE1;
+  --store-sage: #92A690;
+  --store-denim: #6786A0;
+  --store-butter: #EBD699;
+  --store-rose: #D8A499;
+
+  background-color: var(--store-bg);
+  color: var(--store-text);
+}
+
+/* Fashion Editorial Helpers */
+.fashion-container {
+  max-width: 1320px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .fashion-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fashion-container {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+.fashion-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D5;
+  box-shadow: 0 2px 12px -2px rgba(23, 23, 21, 0.04);
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fashion-card:hover {
+  border-color: #D6CEBE;
+  box-shadow: 0 16px 32px -8px rgba(23, 23, 21, 0.08);
+}
+
+/* Hotspot pulsing animation */
+@keyframes hotspotPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(200, 90, 50, 0.6);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(200, 90, 50, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(200, 90, 50, 0);
+  }
+}
+
+.hotspot-pin {
+  animation: hotspotPulse 2.4s infinite cubic-bezier(0.45, 0, 0.55, 1);
+}
+

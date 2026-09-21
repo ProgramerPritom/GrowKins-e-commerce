@@ -29,12 +29,16 @@ import { PageLoader } from './components/motion/PageLoader';
 import { AnimatedPage } from './components/motion/AnimatedPage';
 import { Check } from 'lucide-react';
 import { AdminApp } from './components/admin/AdminApp';
+import { ClothingApp } from './components/clothing/ClothingApp';
 
 const AppContent: React.FC = () => {
   const { view, toastMessage } = useStore();
 
   return (
-    <div className="min-h-screen bg-[#FAF7F1] text-[#24221F] flex flex-col justify-between selection:bg-[#F28F79]/20 selection:text-[#24221F] relative">
+    <div
+      data-store-theme="play"
+      className="min-h-screen bg-[#FAF7F1] text-[#24221F] flex flex-col justify-between selection:bg-[#F28F79]/20 selection:text-[#24221F] relative"
+    >
       
       {/* Lightweight Branded Initial Load Splash */}
       <PageLoader />
@@ -163,7 +167,11 @@ export default function App() {
   return (
     <StoreProvider>
       <LanguageProvider>
-        <AppContent />
+        {currentPath.startsWith('/clothing') ? (
+          <ClothingApp initialPath={currentPath} />
+        ) : (
+          <AppContent />
+        )}
       </LanguageProvider>
     </StoreProvider>
   );

@@ -22,6 +22,11 @@ export interface OrderItemSnapshot {
   price: number;
   quantity: number;
   total: number;
+  variant?: {
+    color?: string;
+    size?: string;
+    sku?: string;
+  };
 }
 
 export interface OrderCustomerInfo {

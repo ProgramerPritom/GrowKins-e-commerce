@@ -236,7 +236,13 @@ export const OrderDetailPage: React.FC = () => {
                     />
                     <div>
                       <h4 className="font-bold text-xs text-[#24221F]">{item.name}</h4>
-                      <p className="text-[11px] text-[#8C8478]">
+                      {item.variant && (
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px]">
+                          {item.variant.color && <span className="bg-[#FAF7F1] px-1.5 py-0.5 rounded text-[#635E55] border border-[#E8E0D2]">Color: {item.variant.color}</span>}
+                          {item.variant.size && <span className="bg-[#FAF3EE] px-1.5 py-0.5 rounded text-[#C85A32] font-semibold border border-[#C85A32]/20">Size: {item.variant.size}</span>}
+                        </div>
+                      )}
+                      <p className="text-[11px] text-[#8C8478] mt-0.5">
                         SKU: {item.sku || '—'} · ৳{item.price} × {item.quantity}
                       </p>
                     </div>

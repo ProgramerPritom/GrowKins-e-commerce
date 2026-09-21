@@ -88,10 +88,30 @@ export interface Product {
   inStock: boolean;
 }
 
+export interface CartVariantInfo {
+  sku: string;
+  color?: {
+    id: string;
+    name: string;
+    hex?: string;
+  };
+  size?: {
+    id: string;
+    label: string;
+    system?: string;
+    cm?: string;
+  };
+  price?: number;
+}
+
 export interface CartItem {
+  id?: string;
   product: Product;
   quantity: number;
+  variant?: CartVariantInfo;
 }
+
+export * from './clothing';
 
 export interface DeliveryDetails {
   fullName: string;

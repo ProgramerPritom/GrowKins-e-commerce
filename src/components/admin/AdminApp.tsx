@@ -27,6 +27,17 @@ import { DeliverySettingsPage } from './pages/delivery/DeliverySettingsPage';
 import { StoreSettingsPage } from './pages/settings/StoreSettingsPage';
 import { CheckoutSettingsPage } from './pages/settings/CheckoutSettingsPage';
 
+// Fashion & Clothing Pages
+import { ClothingDashboardPage } from './pages/clothing/ClothingDashboardPage';
+import { ClothingProductsListPage } from './pages/clothing/ClothingProductsListPage';
+import { ClothingProductEditorPage } from './pages/clothing/ClothingProductEditorPage';
+import { ClothingInventoryPage } from './pages/clothing/ClothingInventoryPage';
+import { ClothingCategoriesPage } from './pages/clothing/ClothingCategoriesPage';
+import { ClothingCollectionsPage } from './pages/clothing/ClothingCollectionsPage';
+import { ClothingLookbooksPage } from './pages/clothing/ClothingLookbooksPage';
+import { ClothingSizeGuidesPage } from './pages/clothing/ClothingSizeGuidesPage';
+import { ClothingHomepageCmsPage } from './pages/clothing/ClothingHomepageCmsPage';
+
 const AdminRouteDispatcher: React.FC = () => {
   const { path, navigate, params } = useAdminRouter();
   const { isAuthenticated, isLoading } = useAdminAuth();
@@ -58,6 +69,42 @@ const AdminRouteDispatcher: React.FC = () => {
     // Exact dashboard or root admin
     if (path === '/admin' || path === '/admin/' || path === '/admin/dashboard') {
       return <DashboardPage />;
+    }
+
+    // Fashion / Clothing Hub & Management
+    if (path === '/admin/clothing' || path === '/admin/clothing/') {
+      return <ClothingDashboardPage />;
+    }
+    if (path === '/admin/clothing/products') {
+      return <ClothingProductsListPage />;
+    }
+    if (
+      path === '/admin/clothing/products/new' ||
+      params.action === 'edit' ||
+      (path.startsWith('/admin/clothing/products/') && params.id)
+    ) {
+      return <ClothingProductEditorPage />;
+    }
+    if (path === '/admin/clothing/inventory') {
+      return <ClothingInventoryPage />;
+    }
+    if (path.startsWith('/admin/clothing/categories')) {
+      return <ClothingCategoriesPage />;
+    }
+    if (path.startsWith('/admin/clothing/collections')) {
+      return <ClothingCollectionsPage />;
+    }
+    if (path.startsWith('/admin/clothing/lookbooks')) {
+      return <ClothingLookbooksPage />;
+    }
+    if (path.startsWith('/admin/clothing/size-guides')) {
+      return <ClothingSizeGuidesPage />;
+    }
+    if (
+      path === '/admin/clothing/content' ||
+      path.startsWith('/admin/clothing/content/homepage')
+    ) {
+      return <ClothingHomepageCmsPage />;
     }
 
     // Products

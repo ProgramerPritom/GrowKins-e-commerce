@@ -32,6 +32,9 @@ import { apiSettingsService } from './api/ApiSettingsService';
 import { mockAuthService } from './mock/MockAuthService';
 import { apiAuthService } from './api/ApiAuthService';
 
+import { mockClothingService } from './mock/MockClothingService';
+import { apiClothingService } from './api/ApiClothingService';
+
 export const productService = USE_MOCK_API ? mockProductService : apiProductService;
 export const categoryService = USE_MOCK_API ? mockCategoryService : apiCategoryService;
 export const collectionService = USE_MOCK_API ? mockCollectionService : apiCollectionService;
@@ -42,6 +45,7 @@ export const mediaService = USE_MOCK_API ? mockMediaService : apiMediaService;
 export const contentService = USE_MOCK_API ? mockContentService : apiContentService;
 export const settingsService = USE_MOCK_API ? mockSettingsService : apiSettingsService;
 export const authService = USE_MOCK_API ? mockAuthService : apiAuthService;
+export const clothingService = USE_MOCK_API ? mockClothingService : apiClothingService;
 
 // Also export individual services and interfaces
 export * from './interfaces/IProductService';
@@ -54,3 +58,4 @@ export * from './interfaces/IMediaService';
 export * from './interfaces/IContentService';
 export * from './interfaces/ISettingsService';
 export * from './interfaces/IAuthService';
+export * from './interfaces/IClothingService';
