@@ -654,6 +654,7 @@ export const ClothingPDP: React.FC<ClothingPDPProps> = ({
             </div>
           </div>
         )}
+      </div>
 
       {/* Mobile Sticky Add-To-Bag Action Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FCFAF7]/95 backdrop-blur-md border-t border-[#E8E2D5] p-3 shadow-lg flex items-center justify-between gap-3">
@@ -663,25 +664,25 @@ export const ClothingPDP: React.FC<ClothingPDPProps> = ({
           </div>
           <div className="flex items-center gap-1.5 text-[11px]">
             <span className="font-bold text-[#C85A32] font-sans">
-              ৳{displayPrice.toLocaleString()}
+              ৳{(currentVariant?.price || product.price).toLocaleString()}
             </span>
             <span className="text-[#857E73]">·</span>
             <span className="font-semibold text-[#171715]">
-              {selectedVariant ? selectedVariant.size.label : 'Select Size'}
+              {currentVariant ? currentVariant.size.label : 'Select Size'}
             </span>
           </div>
         </div>
 
         <button
           onClick={handleAddToCart}
-          disabled={!selectedVariant || selectedVariant.inventoryQuantity === 0}
+          disabled={!currentVariant || currentVariant.inventoryQuantity === 0}
           className="px-5 py-2.5 rounded-xl bg-[#C85A32] hover:bg-[#B24E2A] text-white text-xs font-bold transition-all shadow-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
         >
           <ShoppingBag className="w-3.5 h-3.5" />
           <span>
-            {!selectedVariant
+            {!currentVariant
               ? 'Choose Size'
-              : selectedVariant.inventoryQuantity === 0
+              : currentVariant.inventoryQuantity === 0
               ? 'Sold Out'
               : 'Add to Bag'}
           </span>

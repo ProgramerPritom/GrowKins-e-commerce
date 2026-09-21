@@ -520,7 +520,7 @@ export const ClothingCatalogPage: React.FC<ClothingCatalogPageProps> = ({
                   >
                     All Colors
                   </button>
-                  {colorPalettes.map((c) => (
+                  {colorsList.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedColor(c.id)}
