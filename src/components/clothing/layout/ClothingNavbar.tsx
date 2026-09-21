@@ -40,15 +40,15 @@ export const ClothingNavbar: React.FC<ClothingNavbarProps> = ({
   ];
 
   const handleReturnToToys = () => {
-    window.history.pushState({}, '', '/');
     setView('home');
+    window.history.pushState({}, '', '/');
   };
 
   return (
     <header className="sticky top-0 z-40 bg-[#FCFAF7]/95 backdrop-blur-md border-b border-[#E8E2D5] transition-all">
       {/* Top Utility Line: Cross-store Bridge */}
       <div className="bg-[#171715] text-[#FCFAF7] px-4 py-1.5 text-[11px] font-medium tracking-wide">
-        <div className="fashion-container flex items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 flex items-center justify-between">
           <button
             onClick={handleReturnToToys}
             className="flex items-center gap-1.5 text-[#E6DFD5] hover:text-white transition-colors cursor-pointer"
@@ -69,11 +69,11 @@ export const ClothingNavbar: React.FC<ClothingNavbarProps> = ({
       </div>
 
       {/* Main Navbar */}
-      <div className="fashion-container">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-4 xl:gap-8">
           
           {/* Left: Mobile hamburger & Boutique Wordmark */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button
               onClick={() => setMobileDrawerOpen(true)}
               className="lg:hidden p-2 text-[#171715] hover:bg-[#F2ECE1] rounded-full transition-colors cursor-pointer"
@@ -87,23 +87,23 @@ export const ClothingNavbar: React.FC<ClothingNavbarProps> = ({
               className="text-left group cursor-pointer"
             >
               <div className="flex items-baseline gap-1.5">
-                <span className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#171715] group-hover:text-[#C85A32] transition-colors">
+                <span className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#171715] group-hover:text-[#C85A32] transition-colors whitespace-nowrap">
                   The Little Wardrobe
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#C85A32]" />
               </div>
-              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-[#857E73] block -mt-0.5 sm:-mt-1">
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-[#857E73] block -mt-0.5 sm:-mt-1 whitespace-nowrap">
                 By GrowKins Atelier
               </span>
             </button>
           </div>
 
           {/* Center: Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-7">
+          <nav className="hidden lg:flex items-center justify-center gap-3.5 xl:gap-5 2xl:gap-7 flex-1 min-w-0">
             <button
               onMouseEnter={() => setMegaMenuOpen(true)}
               onClick={() => setMegaMenuOpen(!megaMenuOpen)}
-              className="flex items-center gap-1 text-xs uppercase font-bold tracking-wider text-[#171715] hover:text-[#C85A32] py-2 cursor-pointer transition-colors"
+              className="flex items-center gap-1 text-xs uppercase font-bold tracking-wider text-[#171715] hover:text-[#C85A32] py-2 cursor-pointer transition-colors whitespace-nowrap shrink-0"
             >
               <span>Explore All</span>
               <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${megaMenuOpen ? 'rotate-180' : ''}`} />
@@ -118,7 +118,7 @@ export const ClothingNavbar: React.FC<ClothingNavbarProps> = ({
                     setMegaMenuOpen(false);
                     onNavigate(link.path);
                   }}
-                  className={`text-xs uppercase tracking-wider font-semibold py-2 transition-colors cursor-pointer relative ${
+                  className={`text-xs uppercase tracking-wider font-semibold py-2 transition-colors cursor-pointer relative whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'text-[#C85A32] font-bold'
                       : link.highlight
@@ -136,7 +136,7 @@ export const ClothingNavbar: React.FC<ClothingNavbarProps> = ({
           </nav>
 
           {/* Right: Actions (Search, Wishlist, Cart) */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               onClick={onOpenSearch}
               className="p-2 sm:p-2.5 rounded-full text-[#171715] hover:bg-[#F2ECE1] transition-colors cursor-pointer flex items-center gap-1.5"
@@ -148,8 +148,8 @@ export const ClothingNavbar: React.FC<ClothingNavbarProps> = ({
 
             <button
               onClick={() => {
-                window.history.pushState({}, '', '/');
                 setView('wishlist');
+                window.history.pushState({}, '', '/');
               }}
               className="p-2 sm:p-2.5 rounded-full text-[#171715] hover:bg-[#F2ECE1] transition-colors cursor-pointer relative"
               title="Saved Items"

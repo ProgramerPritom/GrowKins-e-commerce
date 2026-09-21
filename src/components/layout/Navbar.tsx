@@ -65,8 +65,8 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF7F1]/95 backdrop-blur-md border-b border-[#E8E0D2] transition-all">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-4 xl:gap-8">
           
           {/* Left: Mobile hamburger & Brand Wordmark */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
@@ -80,7 +80,7 @@ export const Navbar: React.FC = () => {
 
             <button 
               onClick={() => { setView('home'); resetFilters(); }}
-              className="text-left group flex items-baseline gap-1 cursor-pointer"
+              className="text-left group flex items-baseline gap-1 cursor-pointer whitespace-nowrap"
             >
               <span className="font-serif text-xl sm:text-3xl font-bold tracking-tight text-[#24221F] group-hover:text-[#1C4CB8] transition-colors">
                 GrowKins
@@ -90,11 +90,11 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Center: Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center justify-center gap-5 xl:gap-8 flex-1 min-w-0">
             <button
               onMouseEnter={() => setMegaMenuTab('shop')}
               onClick={() => handleNavClick('shop')}
-              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-[#1C4CB8] py-2 cursor-pointer ${
+              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-[#1C4CB8] py-2 cursor-pointer whitespace-nowrap shrink-0 ${
                 view === 'shop' ? 'text-[#1C4CB8] font-semibold' : 'text-[#24221F]'
               }`}
             >
@@ -105,7 +105,7 @@ export const Navbar: React.FC = () => {
             <button
               onMouseEnter={() => setMegaMenuTab('age')}
               onClick={() => handleNavClick('shop')}
-              className="flex items-center gap-1 text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer"
+              className="flex items-center gap-1 text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer whitespace-nowrap shrink-0"
             >
               <span>{t.nav.byAge}</span>
               <ChevronDown className="w-3.5 h-3.5 opacity-60" />
@@ -114,7 +114,7 @@ export const Navbar: React.FC = () => {
             <button
               onMouseEnter={() => setMegaMenuTab('play')}
               onClick={() => handleNavClick('shop')}
-              className="flex items-center gap-1 text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer"
+              className="flex items-center gap-1 text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer whitespace-nowrap shrink-0"
             >
               <span>{t.nav.play}</span>
               <ChevronDown className="w-3.5 h-3.5 opacity-60" />
@@ -126,7 +126,7 @@ export const Navbar: React.FC = () => {
                 setView('shop');
                 setMegaMenuTab(null);
               }}
-              className="text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer"
+              className="text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer whitespace-nowrap shrink-0"
             >
               {t.nav.everyday}
             </button>
@@ -137,7 +137,7 @@ export const Navbar: React.FC = () => {
                 setView('shop');
                 setMegaMenuTab(null);
               }}
-              className="text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer"
+              className="text-sm font-medium text-[#24221F] hover:text-[#1C4CB8] transition-colors py-2 cursor-pointer whitespace-nowrap shrink-0"
             >
               {t.nav.gifts}
             </button>
@@ -147,7 +147,7 @@ export const Navbar: React.FC = () => {
                 setView('our-story');
                 setMegaMenuTab(null);
               }}
-              className={`text-sm font-medium transition-colors hover:text-[#1C4CB8] py-2 cursor-pointer ${
+              className={`text-sm font-medium transition-colors hover:text-[#1C4CB8] py-2 cursor-pointer whitespace-nowrap shrink-0 ${
                 view === 'our-story' ? 'text-[#1C4CB8] font-semibold' : 'text-[#24221F]'
               }`}
             >
@@ -160,7 +160,7 @@ export const Navbar: React.FC = () => {
                 window.history.pushState({}, '', '/clothing');
                 window.dispatchEvent(new PopStateEvent('popstate'));
               }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#171715] text-[#FCFAF7] hover:bg-[#C85A32] text-xs font-bold transition-all shadow-2xs cursor-pointer ml-1"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#171715] text-[#FCFAF7] hover:bg-[#C85A32] text-xs font-bold transition-all shadow-2xs cursor-pointer ml-1 whitespace-nowrap shrink-0"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#EBD699]" />
               <span>The Little Wardrobe</span>

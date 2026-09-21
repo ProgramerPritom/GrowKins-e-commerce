@@ -10,8 +10,8 @@ export const ClothingFooter: React.FC<ClothingFooterProps> = ({ onNavigate }) =>
   const { setView } = useStore();
 
   const handleReturnToToys = () => {
-    window.history.pushState({}, '', '/');
     setView('home');
+    window.history.pushState({}, '', '/');
   };
 
   return (

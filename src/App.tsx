@@ -31,8 +31,39 @@ import { Check } from 'lucide-react';
 import { AdminApp } from './components/admin/AdminApp';
 import { ClothingApp } from './components/clothing/ClothingApp';
 
+// Global history interceptor to ensure popstate is dispatched when pushState or replaceState is called
+if (typeof window !== 'undefined') {
+  const originalPush = window.history.pushState.bind(window.history);
+  window.history.pushState = function (...args) {
+    const result = originalPush(...args);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    return result;
+  };
+
+  const originalReplace = window.history.replaceState.bind(window.history);
+  window.history.replaceState = function (...args) {
+    const result = originalReplace(...args);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    return result;
+  };
+}
+
 const AppContent: React.FC = () => {
-  const { view, toastMessage } = useStore();
+  const { view, setView, toastMessage } = useStore();
+
+  React.useEffect(() => {
+    const handlePop = () => {
+      const path = window.location.pathname;
+      if ((path === '/' || path === '') && view !== 'home' && view !== 'cart' && view !== 'checkout') {
+        setView('home');
+      }
+    };
+    window.addEventListener('popstate', handlePop);
+    if ((window.location.pathname === '/' || window.location.pathname === '') && view !== 'home' && view !== 'cart' && view !== 'checkout' && view !== 'wishlist') {
+      setView('home');
+    }
+    return () => window.removeEventListener('popstate', handlePop);
+  }, [view, setView]);
 
   return (
     <div

@@ -35,6 +35,10 @@ export const ClothingApp: React.FC<ClothingAppProps> = ({ initialPath = '/clothi
   }, []);
 
   const navigate = (path: string) => {
+    if (path === '/' || !path.startsWith('/clothing')) {
+      window.history.pushState({}, '', path);
+      return;
+    }
     window.history.pushState({}, '', path);
     setCurrentPath(path);
     window.scrollTo({ top: 0, behavior: 'smooth' });
