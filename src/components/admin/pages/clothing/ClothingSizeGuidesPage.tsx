@@ -93,7 +93,7 @@ export const ClothingSizeGuidesPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left max-w-5xl mx-auto">
+    <div className="space-y-6 text-left w-full">
       <PageHeader
         title="Apparel & Shoe Size Guides"
         subtitle="Manage official measurement tables for baby clothing and first-step footwear."

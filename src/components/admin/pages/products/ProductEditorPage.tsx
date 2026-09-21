@@ -355,7 +355,7 @@ export const ProductEditorPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <PageHeader
         title={isEditing ? `Edit: ${formData.name || 'Product'}` : 'New Montessori Product'}

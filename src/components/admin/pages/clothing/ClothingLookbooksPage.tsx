@@ -104,7 +104,7 @@ export const ClothingLookbooksPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left max-w-6xl mx-auto">
+    <div className="space-y-6 text-left w-full">
       <PageHeader
         title="Fashion Looks & Hotspots Editor"
         subtitle="Place interactive product pins on styled editorial lifestyle photography."

@@ -311,7 +311,7 @@ export const ClothingProductEditorPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-8 pb-20 text-left max-w-6xl mx-auto">
+    <div className="space-y-8 pb-20 text-left w-full">
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

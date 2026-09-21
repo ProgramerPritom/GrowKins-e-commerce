@@ -55,7 +55,7 @@ export const ClothingHomepageCmsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 text-left max-w-6xl mx-auto">
+    <div className="space-y-6 text-left w-full">
       <PageHeader
         title="Clothing Boutique Homepage CMS"
         subtitle="Control editorial imagery, Little Wardrobe hero headlines, material stories, and live preview."
