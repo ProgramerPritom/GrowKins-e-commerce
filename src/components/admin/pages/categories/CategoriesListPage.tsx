@@ -8,7 +8,7 @@ import { categoryService } from '../../../../services';
 import type { AdminCategory, CreateCategoryPayload } from '../../../../types/admin';
 
 export const CategoriesListPage: React.FC = () => {
-  const { showToast } = useAdminToast();
+  const { toast, showToast } = useAdminToast();
 
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,17 +76,17 @@ export const CategoriesListPage: React.FC = () => {
 
       if (editingCategory) {
         await categoryService.update(editingCategory.id, payload);
-        showToast('Category updated.');
+        toast.success(`Category "${payload.name}" updated in Google Sheets.`);
       } else {
         await categoryService.create(payload);
-        showToast('Category created.');
+        toast.success(`Category "${payload.name}" created and synced to Google Sheets.`);
       }
 
       setModalOpen(false);
       fetchCategories();
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Failed to save category.', 'error');
+      toast.error(err.message || 'Failed to save category.');
     }
   };
 
@@ -94,12 +94,12 @@ export const CategoriesListPage: React.FC = () => {
     if (!deleteTargetId) return;
     try {
       await categoryService.delete(deleteTargetId);
-      showToast('Category deleted.');
+      toast.delete('Category deleted from Google Sheets.');
       setDeleteTargetId(null);
       fetchCategories();
     } catch (err) {
       console.error(err);
-      showToast('Could not delete category.', 'error');
+      toast.error('Could not delete category.');
     }
   };
 

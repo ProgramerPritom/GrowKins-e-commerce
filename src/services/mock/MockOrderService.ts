@@ -141,6 +141,31 @@ export class MockOrderService implements IOrderService {
     MockDatabase.setOrders(orders);
     return { success: true, data: updated, message: `Payment status set to ${paymentStatus}.` };
   }
+
+  public async create(order: Partial<AdminOrder>): Promise<ApiResponse<AdminOrder>> {
+    await delay(200);
+    const orders = MockDatabase.getOrders();
+    const newOrder: AdminOrder = {
+      id: order.id || `ord_${Date.now()}`,
+      orderNumber: order.orderNumber || `GK-BD-${Math.floor(1000 + Math.random() * 9000)}`,
+      customer: order.customer || { name: 'Customer', phone: '' },
+      deliveryAddress: order.deliveryAddress || { fullName: 'Customer', phone: '', deliveryZone: 'inside-dhaka', district: 'Dhaka', thanaArea: '', streetAddress: '' },
+      items: order.items || [],
+      subtotal: order.subtotal || 0,
+      deliveryFee: order.deliveryFee || 0,
+      total: order.total || 0,
+      currency: 'BDT',
+      paymentMethod: 'Cash on Delivery',
+      paymentStatus: order.paymentStatus || 'cod_pending',
+      status: order.status || 'pending',
+      timeline: order.timeline || [],
+      createdAt: order.createdAt || new Date().toISOString(),
+      updatedAt: order.updatedAt || new Date().toISOString()
+    };
+
+    MockDatabase.setOrders([newOrder, ...orders]);
+    return { success: true, data: newOrder, message: 'Order placed successfully.' };
+  }
 }
 
 export const mockOrderService = new MockOrderService();

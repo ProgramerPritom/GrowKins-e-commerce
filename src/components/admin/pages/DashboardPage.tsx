@@ -12,8 +12,10 @@ import {
 } from 'lucide-react';
 import { MetricCard } from '../common/MetricCard';
 import { StatusBadge } from '../common/StatusBadge';
+import { MetricCardSkeleton } from '../../common/LoadingSkeleton';
 import { PageHeader } from '../layout/PageHeader';
 import { useAdminRouter } from '../../../context/AdminRouterContext';
+import { productService, orderService } from '../../../services';
 import { MockDatabase } from '../../../lib/mockDb/MockDatabase';
 import type { AdminProduct, AdminOrder } from '../../../types/admin';
 
@@ -22,16 +24,42 @@ export const DashboardPage: React.FC = () => {
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const load = () => {
-      setProducts(MockDatabase.getProducts());
-      setOrders(MockDatabase.getOrders());
+    let mounted = true;
+
+    const loadData = async () => {
+      try {
+        const [prodRes, ordRes] = await Promise.all([
+          productService.list({ limit: 100 }),
+          orderService.list({ limit: 100 })
+        ]);
+
+        if (mounted) {
+          if (prodRes && prodRes.data) setProducts(prodRes.data);
+          if (ordRes && ordRes.data) setOrders(ordRes.data);
+        }
+      } catch (e) {
+        console.warn('Live dashboard fetch fallback:', e);
+        if (mounted) {
+          setProducts(MockDatabase.getProducts());
+          setOrders(MockDatabase.getOrders());
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
     };
 
-    load();
-    const unsub = MockDatabase.subscribe(load);
-    return () => unsub();
+    loadData();
+
+    const unsub = MockDatabase.subscribe(() => {
+      loadData();
+    });
+    return () => {
+      mounted = false;
+      unsub();
+    };
   }, []);
 
   // Compute live dashboard metrics
@@ -77,45 +105,53 @@ export const DashboardPage: React.FC = () => {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Products"
-          value={totalProducts}
-          subtitle={`${activeProducts} active on store`}
-          icon={Package}
-          iconBg="bg-[#E7EDFB]"
-          iconColor="text-[#1C4CB8]"
-          onClick={() => navigate('/admin/products')}
-        />
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <MetricCardSkeleton key={`metric-skel-${i}`} />
+          ))
+        ) : (
+          <>
+            <MetricCard
+              title="Total Products"
+              value={totalProducts}
+              subtitle={`${activeProducts} active on store`}
+              icon={Package}
+              iconBg="bg-[#E7EDFB]"
+              iconColor="text-[#1C4CB8]"
+              onClick={() => navigate('/admin/products')}
+            />
 
-        <MetricCard
-          title="Orders Pipeline"
-          value={totalOrders}
-          subtitle={`${pendingOrders} awaiting dispatch`}
-          change={{ value: '+12% this week', positive: true }}
-          icon={ShoppingBag}
-          iconBg="bg-[#FCF4DB]"
-          iconColor="text-[#9A7316]"
-          onClick={() => navigate('/admin/orders')}
-        />
+            <MetricCard
+              title="Orders Pipeline"
+              value={totalOrders}
+              subtitle={`${pendingOrders} awaiting dispatch`}
+              change={{ value: '+12% this week', positive: true }}
+              icon={ShoppingBag}
+              iconBg="bg-[#FCF4DB]"
+              iconColor="text-[#9A7316]"
+              onClick={() => navigate('/admin/orders')}
+            />
 
-        <MetricCard
-          title="COD Revenue"
-          value={`৳${totalRevenue.toLocaleString()}`}
-          subtitle={`${deliveredOrders} orders collected`}
-          icon={DollarSign}
-          iconBg="bg-[#E6EFE9]"
-          iconColor="text-[#2D6A4F]"
-        />
+            <MetricCard
+              title="COD Revenue"
+              value={`৳${totalRevenue.toLocaleString()}`}
+              subtitle={`${deliveredOrders} orders collected`}
+              icon={DollarSign}
+              iconBg="bg-[#E6EFE9]"
+              iconColor="text-[#2D6A4F]"
+            />
 
-        <MetricCard
-          title="Low Stock Alerts"
-          value={lowStockProducts.length}
-          subtitle={lowStockProducts.length > 0 ? 'Action needed' : 'All stocks healthy'}
-          icon={AlertTriangle}
-          iconBg={lowStockProducts.length > 0 ? 'bg-[#FBE8E5]' : 'bg-[#E6EFE9]'}
-          iconColor={lowStockProducts.length > 0 ? 'text-[#B83A28]' : 'text-[#2D6A4F]'}
-          onClick={() => navigate('/admin/products?stockStatus=low_stock')}
-        />
+            <MetricCard
+              title="Low Stock Alerts"
+              value={lowStockProducts.length}
+              subtitle={lowStockProducts.length > 0 ? 'Action needed' : 'All stocks healthy'}
+              icon={AlertTriangle}
+              iconBg={lowStockProducts.length > 0 ? 'bg-[#FBE8E5]' : 'bg-[#E6EFE9]'}
+              iconColor={lowStockProducts.length > 0 ? 'text-[#B83A28]' : 'text-[#2D6A4F]'}
+              onClick={() => navigate('/admin/products?stockStatus=low_stock')}
+            />
+          </>
+        )}
       </div>
 
       {/* Quick Action Tiles */}

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Product, CartItem, DeliveryDetails, Order, AgeRange, Category, Interest, DevelopmentalBenefit, Material, Occasion } from '../types';
 import { PRODUCTS } from '../data/products';
 import { MockDatabase } from '../lib/mockDb/MockDatabase';
+import { orderService, productService } from '../services';
 import type { AdminOrder } from '../types/admin';
 
 export type AppView = 
@@ -39,6 +40,18 @@ const DEFAULT_FILTERS: FilterState = {
   sortBy: 'featured',
   searchQuery: ''
 };
+
+export interface StoreToast {
+  id: string;
+  message: string;
+  type?: 'success' | 'error' | 'warning' | 'info' | 'delete';
+  title?: string;
+  image?: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}
 
 interface StoreContextType {
   // Navigation
@@ -94,9 +107,20 @@ interface StoreContextType {
   activeOrder: Order | null;
   placeCodOrder: () => Promise<Order>;
   
+  // Products Live State
+  products: Product[];
+  productsLoading: boolean;
+  refreshProducts: () => Promise<void>;
+
   // Toast
+  toast: StoreToast | null;
   toastMessage: string | null;
-  showToast: (msg: string) => void;
+  showToast: (
+    msg: string,
+    type?: 'success' | 'error' | 'warning' | 'info' | 'delete',
+    options?: { title?: string; image?: string; action?: { label: string; onClick: () => void } }
+  ) => void;
+  hideToast: () => void;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
@@ -154,6 +178,41 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Live Products State fetched from Google Sheets Backend (with static fallback)
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [productsLoading, setProductsLoading] = useState<boolean>(false);
+
+  const loadProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const res = await productService.list({ limit: 100 });
+      if (res && res.data && res.data.length > 0) {
+        const mapped: Product[] = res.data.map((p: any) => ({
+          ...p,
+          images: {
+            main: Array.isArray(p.images) ? (p.images[0]?.url || p.featuredImage || '') : (p.images?.main || ''),
+            secondary: Array.isArray(p.images) ? (p.images[1]?.url || p.images[0]?.url || '') : (p.images?.secondary || ''),
+            gallery: Array.isArray(p.images) ? p.images.map((img: any) => img.url) : (p.images?.gallery || [])
+          },
+          inStock: p.status === 'active' && ((p.inventory?.quantity ?? 1) > 0)
+        }));
+        setProducts(mapped);
+      }
+    } catch (err) {
+      console.warn('Failed to load products from live backend, keeping fallback:', err);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const refreshProducts = async () => {
+    await loadProducts();
+  };
 
   // Bangladesh localized delivery details
   const [deliveryDetails, setDeliveryDetails] = useState<DeliveryDetails>(() => {
@@ -215,11 +274,32 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [deliveryDetails]);
 
-  const showToast = (msg: string) => {
+  const [toast, setToast] = useState<StoreToast | null>(null);
+
+  const showToast = (
+    msg: string,
+    type: 'success' | 'error' | 'warning' | 'info' | 'delete' = 'success',
+    options?: { title?: string; image?: string; action?: { label: string; onClick: () => void } }
+  ) => {
+    const id = `toast-${Date.now()}`;
     setToastMessage(msg);
+    setToast({
+      id,
+      message: msg,
+      type,
+      title: options?.title,
+      image: options?.image,
+      action: options?.action
+    });
     setTimeout(() => {
+      setToast(prev => (prev?.id === id ? null : prev));
       setToastMessage(prev => (prev === msg ? null : prev));
-    }, 2800);
+    }, 3600);
+  };
+
+  const hideToast = () => {
+    setToast(null);
+    setToastMessage(null);
   };
 
   const setView = (newView: AppView) => {
@@ -411,7 +491,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     await new Promise(res => setTimeout(res, 850));
 
-    // Also persist into Admin MockDatabase for real-time admin sync
+    // Persist order to active service (Google Sheets backend in Live mode, Mock DB in mock mode)
     try {
       const adminOrder: AdminOrder = {
         id: `ord_${Date.now()}`,
@@ -436,7 +516,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           sku: item.variant?.sku || `GK-${item.product.id.substring(0, 5).toUpperCase()}`,
           price: item.variant?.price || item.product.price,
           quantity: item.quantity,
-          image: item.product.images.main || '',
+          image: item.product.images?.main || (Array.isArray(item.product.images) ? item.product.images[0]?.url : '') || '',
           total: (item.variant?.price || item.product.price) * item.quantity,
           variant: item.variant ? {
             color: item.variant.color?.name,
@@ -471,10 +551,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updatedAt: new Date().toISOString()
       };
 
-      const existingOrders = MockDatabase.getOrders();
-      MockDatabase.setOrders([adminOrder, ...existingOrders]);
+      await orderService.create(adminOrder);
     } catch (e) {
-      console.warn('Failed to mirror storefront order into Admin MockDatabase', e);
+      console.warn('Order sync warning:', e);
     }
 
     setActiveOrder(newOrder);
@@ -528,8 +607,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateDeliveryDetails,
         activeOrder,
         placeCodOrder,
+        products,
+        productsLoading,
+        refreshProducts,
+        toast,
         toastMessage,
-        showToast
+        showToast,
+        hideToast
       }}
     >
       {children}

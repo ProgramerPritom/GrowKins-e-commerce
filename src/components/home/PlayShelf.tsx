@@ -3,12 +3,15 @@ import { useStore } from '../../context/StoreContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { PRODUCTS } from '../../data/products';
 import { ProductCard } from '../catalog/ProductCard';
+import { ProductCardSkeleton } from '../common/LoadingSkeleton';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 export const PlayShelf: React.FC = () => {
-  const { setView } = useStore();
+  const { setView, products, productsLoading } = useStore();
   const { t } = useLanguage();
-  const featuredProducts = PRODUCTS.slice(0, 4);
+
+  const sourceProducts = products && products.length > 0 ? products : PRODUCTS;
+  const featuredProducts = sourceProducts.slice(0, 4);
 
   return (
     <section className="py-12 sm:py-20 md:py-28 bg-[#FAF7F1] border-b border-[#E8E0D2]/60">
@@ -36,9 +39,13 @@ export const PlayShelf: React.FC = () => {
 
         {/* 4 Cards Grid: 2 columns on mobile for modern shopping ergonomics */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6 lg:gap-8">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {productsLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <ProductCardSkeleton key={`shelf-skel-${i}`} />
+              ))
+            : featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
 
       </div>

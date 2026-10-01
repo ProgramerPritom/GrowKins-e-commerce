@@ -17,6 +17,7 @@ import {
 import { PageHeader } from '../../layout/PageHeader';
 import { StatusBadge } from '../../common/StatusBadge';
 import { OrderTimeline } from '../../common/OrderTimeline';
+import { Skeleton, InlineLoadingSpinner } from '../../../common/LoadingSkeleton';
 import { useAdminRouter } from '../../../../context/AdminRouterContext';
 import { useAdminToast } from '../../common/AdminToast';
 import { orderService } from '../../../../services';
@@ -24,7 +25,7 @@ import type { AdminOrder, OrderStatus, PaymentStatus } from '../../../../types/a
 
 export const OrderDetailPage: React.FC = () => {
   const { params, navigate } = useAdminRouter();
-  const { showToast } = useAdminToast();
+  const { toast } = useAdminToast();
 
   const orderId = params.id;
   const [order, setOrder] = useState<AdminOrder | null>(null);
@@ -46,7 +47,7 @@ export const OrderDetailPage: React.FC = () => {
       setOrder(res.data);
     } catch (err: any) {
       console.error(err);
-      showToast('Order not found.', 'error');
+      toast.error('Order not found.');
       navigate('/admin/orders');
     } finally {
       setIsLoading(false);
@@ -57,7 +58,7 @@ export const OrderDetailPage: React.FC = () => {
     if (!order) return;
     navigator.clipboard.writeText(order.customer.phone);
     setCopiedPhone(true);
-    showToast('Customer phone copied to clipboard.');
+    toast.info('Customer phone number copied to clipboard.');
     setTimeout(() => setCopiedPhone(false), 2000);
   };
 
@@ -71,10 +72,10 @@ export const OrderDetailPage: React.FC = () => {
       });
       setOrder(res.data);
       setActionNote('');
-      showToast(`Order status updated to ${newStatus}.`);
+      toast.success(`Order status updated to ${newStatus} in Google Sheets.`);
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Failed to update order status.', 'error');
+      toast.error(err.message || 'Failed to update order status.');
     } finally {
       setIsUpdating(false);
     }
@@ -86,10 +87,10 @@ export const OrderDetailPage: React.FC = () => {
     try {
       const res = await orderService.updatePaymentStatus(order.id, newPayment);
       setOrder(res.data);
-      showToast(`Payment status updated to ${newPayment}.`);
+      toast.success(`Payment status updated to ${newPayment} in Google Sheets.`);
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Failed to update payment status.', 'error');
+      toast.error(err.message || 'Failed to update payment status.');
     } finally {
       setIsUpdating(false);
     }
@@ -97,9 +98,21 @@ export const OrderDetailPage: React.FC = () => {
 
   if (isLoading || !order) {
     return (
-      <div className="py-24 text-center">
-        <div className="w-8 h-8 border-2 border-[#1C4CB8] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs text-[#8C8478]">Loading order details...</p>
+      <div className="space-y-6 max-w-5xl">
+        <PageHeader
+          title="Loading Order Details..."
+          subtitle="Syncing order record and customer history from Google Sheets"
+          breadcrumbs={[{ label: 'Orders', href: '/admin/orders' }, { label: 'Loading' }]}
+        />
+        <div className="bg-white border border-[#E8E0D2] rounded-2xl p-6 shadow-xs space-y-4">
+          <Skeleton className="h-6 w-1/3" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+          </div>
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -147,6 +160,7 @@ export const OrderDetailPage: React.FC = () => {
 
         {/* Status Transition Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          {isUpdating && <InlineLoadingSpinner text="Syncing Sheets..." className="text-xs text-[#1C4CB8] font-semibold mr-2" />}
           {order.status === 'pending' && (
             <button
               disabled={isUpdating}

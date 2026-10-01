@@ -4,6 +4,7 @@ import { useStore } from '../../context/StoreContext';
 import { PRODUCTS, MOCK_REVIEWS } from '../../data/products';
 import { ProductCard } from '../catalog/ProductCard';
 import { LightboxModal } from '../motion/LightboxModal';
+import { ProductDetailSkeleton } from '../common/LoadingSkeleton';
 import { 
   Star, Heart, Plus, Minus, ShieldCheck, Check, 
   PackageCheck, Truck, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Box, Maximize2
@@ -15,10 +16,13 @@ export const ProductDetailPage: React.FC = () => {
     addToCart, 
     isInWishlist, 
     toggleWishlist, 
-    setView 
+    setView,
+    products,
+    productsLoading
   } = useStore();
 
-  const product = PRODUCTS.find(p => p.id === selectedProductId) || PRODUCTS[0];
+  const sourceProducts = products && products.length > 0 ? products : PRODUCTS;
+  const product = sourceProducts.find(p => p.id === selectedProductId) || sourceProducts[0] || PRODUCTS[0];
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(0);
@@ -94,6 +98,16 @@ export const ProductDetailPage: React.FC = () => {
       a: "You are welcome to inspect the package upon courier delivery. If any item arrives damaged or your child is not delighted, we provide a 3-day hassle-free doorstep exchange and return policy."
     }
   ];
+
+  if (productsLoading && !product) {
+    return (
+      <div className="bg-[#FAF7F1] py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ProductDetailSkeleton />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#FAF7F1] py-6 sm:py-12 pb-28 lg:pb-12">

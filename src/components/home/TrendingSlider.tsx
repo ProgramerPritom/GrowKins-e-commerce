@@ -3,15 +3,18 @@ import { motion } from 'framer-motion';
 import { useStore } from '../../context/StoreContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { PRODUCTS } from '../../data/products';
+import { Skeleton } from '../common/LoadingSkeleton';
 import { TrendingUp, ChevronLeft, ChevronRight, Star, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export const TrendingSlider: React.FC = () => {
-  const { openProduct, addToCart, setView } = useStore();
+  const { openProduct, addToCart, setView, products, productsLoading } = useStore();
   const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const sourceProducts = products && products.length > 0 ? products : PRODUCTS;
+
   // Filter trending products (bestsellers, staff picks, high ratings)
-  const trendingProducts = PRODUCTS.filter(
+  const trendingProducts = sourceProducts.filter(
     p => p.tag === 'BESTSELLER' || p.tag === 'STAFF PICK' || p.rating >= 4.8
   ).slice(0, 8);
 
@@ -68,7 +71,23 @@ export const TrendingSlider: React.FC = () => {
           className="flex gap-4 sm:gap-5 overflow-x-auto pb-6 scrollbar-none snap-x snap-mandatory text-left -mx-4 px-4 sm:mx-0 sm:px-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {trendingProducts.map((product) => (
+          {productsLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={`trend-skel-${i}`}
+                  className="shrink-0 w-[230px] sm:w-[290px] snap-start bg-white rounded-3xl p-4 border border-[#E8E0D2] shadow-xs space-y-3"
+                >
+                  <Skeleton className="w-full aspect-square rounded-2xl" />
+                  <Skeleton className="h-4 w-20 rounded-full" />
+                  <Skeleton className="h-5 w-4/5" />
+                  <Skeleton className="h-3.5 w-3/5" />
+                  <div className="pt-3 border-t border-[#FAF7F1] flex justify-between items-center">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                </div>
+              ))
+            : trendingProducts.map((product) => (
             <div
               key={product.id}
               className="shrink-0 w-[230px] sm:w-[290px] snap-start group bg-white rounded-3xl p-3.5 sm:p-4 border border-[#E8E0D2] shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"

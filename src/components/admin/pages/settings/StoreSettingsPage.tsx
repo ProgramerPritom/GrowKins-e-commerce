@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Store } from 'lucide-react';
 import { PageHeader } from '../../layout/PageHeader';
+import { FormSkeleton, InlineLoadingSpinner } from '../../../common/LoadingSkeleton';
 import { useAdminToast } from '../../common/AdminToast';
 import { settingsService } from '../../../../services';
 import type { StoreSettings } from '../../../../types/admin';
 
 export const StoreSettingsPage: React.FC = () => {
-  const { showToast } = useAdminToast();
+  const { toast } = useAdminToast();
 
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +24,7 @@ export const StoreSettingsPage: React.FC = () => {
       setSettings(res.data);
     } catch (err) {
       console.error(err);
-      showToast('Failed to load store settings.', 'error');
+      toast.error('Failed to load store settings from Google Sheets.');
     } finally {
       setIsLoading(false);
     }
@@ -40,10 +41,10 @@ export const StoreSettingsPage: React.FC = () => {
     setIsSaving(true);
     try {
       await settingsService.updateStoreSettings(settings);
-      showToast('Store settings saved successfully!');
+      toast.success('Store settings saved and synced to Google Sheets!');
     } catch (err) {
       console.error(err);
-      showToast('Failed to save store settings.', 'error');
+      toast.error('Failed to save store settings.');
     } finally {
       setIsSaving(false);
     }
@@ -51,9 +52,13 @@ export const StoreSettingsPage: React.FC = () => {
 
   if (isLoading || !settings) {
     return (
-      <div className="py-24 text-center">
-        <div className="w-8 h-8 border-2 border-[#1C4CB8] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs text-[#8C8478]">Loading store settings...</p>
+      <div className="space-y-6 max-w-4xl">
+        <PageHeader
+          title="Store Profile & Brand Settings"
+          subtitle="Manage store identity, operational contacts, currency, and social presence."
+          breadcrumbs={[{ label: 'Settings' }, { label: 'Store' }]}
+        />
+        <FormSkeleton />
       </div>
     );
   }
@@ -70,8 +75,14 @@ export const StoreSettingsPage: React.FC = () => {
             disabled={isSaving}
             className="px-5 py-2 rounded-xl bg-[#1C4CB8] hover:bg-[#15398B] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>{isSaving ? 'Saving...' : 'Save Settings'}</span>
+            {isSaving ? (
+              <InlineLoadingSpinner text="Saving to Sheets..." />
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Settings</span>
+              </>
+            )}
           </button>
         }
       />

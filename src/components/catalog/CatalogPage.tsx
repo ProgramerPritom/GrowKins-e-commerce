@@ -4,6 +4,7 @@ import { useStore } from '../../context/StoreContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { PRODUCTS } from '../../data/products';
 import { ProductCard } from './ProductCard';
+import { ProductGridSkeleton } from '../common/LoadingSkeleton';
 import type { AgeRange, Category, Interest, DevelopmentalBenefit, Material, Occasion } from '../../types';
 import { SlidersHorizontal, X, ChevronDown, Sparkles, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -11,6 +12,8 @@ const ITEMS_PER_PAGE = 6;
 
 export const CatalogPage: React.FC = () => {
   const { 
+    products,
+    productsLoading,
     filters, 
     setFilter, 
     toggleArrayFilter, 
@@ -22,8 +25,10 @@ export const CatalogPage: React.FC = () => {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  const activeProductsSource = products && products.length > 0 ? products : PRODUCTS;
+
   // Compute filtered products
-  const filteredProducts = PRODUCTS.filter((p) => {
+  const filteredProducts = activeProductsSource.filter((p) => {
     // Age filter
     if (filters.age.length > 0 && !filters.age.includes(p.ageGroup)) {
       return false;
@@ -399,7 +404,9 @@ export const CatalogPage: React.FC = () => {
 
           {/* Products Grid & Pagination (Item 4) */}
           <main className="lg:col-span-9">
-            {sortedProducts.length > 0 ? (
+            {productsLoading ? (
+              <ProductGridSkeleton count={ITEMS_PER_PAGE} />
+            ) : sortedProducts.length > 0 ? (
               <div className="space-y-8 sm:space-y-10">
                 {/* 2-column mobile grid, 3-column desktop */}
                 <motion.div layout className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6 lg:gap-8">

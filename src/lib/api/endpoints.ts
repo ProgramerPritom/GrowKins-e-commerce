@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
   },
   orders: {
     list: '/api/admin/orders',
+    create: '/api/admin/orders',
     detail: (id: string) => `/api/admin/orders/${id}`,
     updateStatus: (id: string) => `/api/admin/orders/${id}/status`,
     updatePayment: (id: string) => `/api/admin/orders/${id}/payment`,

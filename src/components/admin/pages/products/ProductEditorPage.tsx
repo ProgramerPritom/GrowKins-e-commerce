@@ -11,6 +11,7 @@ import {
 import { PageHeader } from '../../layout/PageHeader';
 import { MediaPicker } from '../../common/MediaPicker';
 import { ConfirmDialog } from '../../common/ConfirmDialog';
+import { FormSkeleton, InlineLoadingSpinner } from '../../../common/LoadingSkeleton';
 import { useAdminRouter } from '../../../../context/AdminRouterContext';
 import { useAdminToast } from '../../common/AdminToast';
 import { productService } from '../../../../services';
@@ -70,7 +71,7 @@ const ALL_MATERIALS: Material[] = [
 
 export const ProductEditorPage: React.FC = () => {
   const { params, navigate } = useAdminRouter();
-  const { showToast } = useAdminToast();
+  const { toast, showToast } = useAdminToast();
 
   const isEditing = !!params.id && params.id !== 'new';
   const productId = params.id;
@@ -318,16 +319,16 @@ export const ProductEditorPage: React.FC = () => {
     try {
       if (isEditing && productId) {
         await productService.update(productId, payload);
-        showToast('Product updated successfully.');
+        toast.success('Product updated and synced to Google Sheets.');
       } else {
         await productService.create(payload);
-        showToast('Product created successfully.');
+        toast.success('Product created and saved to Google Sheets.');
       }
       setHasUnsavedChanges(false);
       navigate('/admin/products');
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Failed to save product.', 'error');
+      toast.error(err.message || 'Failed to save product.');
     } finally {
       setIsSaving(false);
     }
@@ -337,19 +338,23 @@ export const ProductEditorPage: React.FC = () => {
     if (!productId) return;
     try {
       await productService.delete(productId);
-      showToast('Product deleted.');
+      toast.delete('Product removed from Google Sheets.');
       navigate('/admin/products');
     } catch (err) {
       console.error(err);
-      showToast('Could not delete product.', 'error');
+      toast.error('Could not delete product.');
     }
   };
 
   if (isLoading) {
     return (
-      <div className="py-24 text-center">
-        <div className="w-8 h-8 border-2 border-[#1C4CB8] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs text-[#8C8478]">Loading product configuration...</p>
+      <div className="space-y-6">
+        <PageHeader
+          title="Loading Product..."
+          subtitle="Fetching listing metadata from Google Sheets database"
+          breadcrumbs={[{ label: 'Products', href: '/admin/products' }, { label: 'Loading' }]}
+        />
+        <FormSkeleton />
       </div>
     );
   }
@@ -402,7 +407,7 @@ export const ProductEditorPage: React.FC = () => {
               disabled={isSaving}
               className="px-4 py-2 rounded-xl border border-[#E8E0D2] bg-white text-[#24221F] hover:bg-[#FAF7F1] text-xs font-semibold cursor-pointer disabled:opacity-50"
             >
-              Save Draft
+              {isSaving ? 'Saving…' : 'Save Draft'}
             </button>
 
             <button
@@ -410,8 +415,14 @@ export const ProductEditorPage: React.FC = () => {
               disabled={isSaving}
               className="px-5 py-2 rounded-xl bg-[#1C4CB8] hover:bg-[#15398B] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
             >
-              <Save className="w-3.5 h-3.5" />
-              <span>{formData.status === 'active' ? 'Update Product' : 'Publish Product'}</span>
+              {isSaving ? (
+                <InlineLoadingSpinner text="Saving to Sheets..." />
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{formData.status === 'active' ? 'Update Product' : 'Publish Product'}</span>
+                </>
+              )}
             </button>
           </div>
         }
