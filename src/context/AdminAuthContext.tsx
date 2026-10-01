@@ -18,9 +18,32 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const checkAuth = useCallback(async () => {
     try {
+      // Clear legacy/mock keys from previous sessions
+      const sessionStr = localStorage.getItem('growkins_admin_session');
+      if (!sessionStr) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const parsed = JSON.parse(sessionStr);
+      const email = (parsed?.user?.email || '').toLowerCase().trim();
+      if (email !== 'growkins-admin@gmail.com' || !parsed?.token) {
+        localStorage.removeItem('growkins_admin_session');
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
       const res = await authService.getCurrentUser();
-      setUser(res.data);
+      if (res?.data?.email?.toLowerCase().trim() === 'growkins-admin@gmail.com') {
+        setUser(res.data);
+      } else {
+        localStorage.removeItem('growkins_admin_session');
+        setUser(null);
+      }
     } catch {
+      localStorage.removeItem('growkins_admin_session');
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -37,8 +60,13 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+    } finally {
+      localStorage.removeItem('growkins_admin_session');
+      sessionStorage.clear();
+      setUser(null);
+    }
   };
 
   return (

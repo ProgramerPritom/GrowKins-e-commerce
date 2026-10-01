@@ -23,10 +23,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onOpenMobileMenu }) =>
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Live Mock Mode Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FCF4DB] border border-[#E8DAB2] text-[11px] font-semibold text-[#8C6C38]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#DDA428] animate-pulse" />
-          <span>Local Mock Database (Persistent)</span>
+        {/* Live Status Pill */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E7F3EC] border border-[#BDE0CE] text-[11px] font-semibold text-[#2D6A4F]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#38A169] animate-pulse" />
+          <span>Live Google Sheets Database</span>
         </div>
       </div>
 

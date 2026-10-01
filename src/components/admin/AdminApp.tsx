@@ -80,8 +80,7 @@ const AdminRouteDispatcher: React.FC = () => {
     }
     if (
       path === '/admin/clothing/products/new' ||
-      params.action === 'edit' ||
-      (path.startsWith('/admin/clothing/products/') && params.id)
+      (path.startsWith('/admin/clothing/products/') && (params.id || params.action === 'edit'))
     ) {
       return <ClothingProductEditorPage />;
     }
@@ -107,11 +106,14 @@ const AdminRouteDispatcher: React.FC = () => {
       return <ClothingHomepageCmsPage />;
     }
 
-    // Products
+    // Products (Catalog)
     if (path === '/admin/products') {
       return <ProductsListPage />;
     }
-    if (path === '/admin/products/new' || params.action === 'edit' || (path.startsWith('/admin/products/') && params.id)) {
+    if (
+      path === '/admin/products/new' ||
+      (path.startsWith('/admin/products/') && (params.id || params.action === 'edit'))
+    ) {
       return <ProductEditorPage />;
     }
 

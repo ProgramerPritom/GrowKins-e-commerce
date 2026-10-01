@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Mail, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 import { useAdminRouter } from '../../../context/AdminRouterContext';
 
@@ -8,8 +8,9 @@ export const AdminLoginPage: React.FC = () => {
   const { login } = useAdminAuth();
   const { navigate } = useAdminRouter();
 
-  const [email, setEmail] = useState('admin@growkins.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,15 +24,15 @@ export const AdminLoginPage: React.FC = () => {
       await login({ email, password, rememberMe });
       navigate('/admin/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials. Please try again.');
+      setError(err.message || 'Invalid credentials. Please enter authorized admin email and password.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleQuickDemo = () => {
-    setEmail('admin@growkins.com');
-    setPassword('admin123');
+    setEmail('growkins-admin@gmail.com');
+    setPassword('growkins123');
   };
 
   return (
@@ -43,13 +44,16 @@ export const AdminLoginPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         {/* Brand Header */}
         <div className="text-center">
-          <div className="inline-flex items-baseline gap-1 cursor-pointer" onClick={() => window.location.href = '/'}>
+          <div
+            className="inline-flex items-baseline gap-1 cursor-pointer"
+            onClick={() => (window.location.href = '/')}
+          >
             <span className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-[#24221F]">
               GrowKins
             </span>
             <span className="w-2 h-2 rounded-full bg-[#F28F79]" />
           </div>
-          <h2 className="mt-3 text-sm font-semibold tracking-wide text-[#7D766C] uppercase">
+          <h2 className="mt-3 text-xs font-bold tracking-widest text-[#7D766C] uppercase">
             Store Administration Portal
           </h2>
         </div>
@@ -79,7 +83,7 @@ export const AdminLoginPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@growkins.com"
+                  placeholder="growkins-admin@gmail.com"
                   className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#E8E0D2] rounded-xl text-[#24221F] placeholder-[#9E9689] focus:outline-none focus:border-[#1C4CB8] focus:ring-2 focus:ring-[#1C4CB8]/10 transition-all"
                 />
               </div>
@@ -95,13 +99,20 @@ export const AdminLoginPage: React.FC = () => {
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478]" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#E8E0D2] rounded-xl text-[#24221F] placeholder-[#9E9689] focus:outline-none focus:border-[#1C4CB8] focus:ring-2 focus:ring-[#1C4CB8]/10 transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 text-xs bg-white border border-[#E8E0D2] rounded-xl text-[#24221F] placeholder-[#9E9689] focus:outline-none focus:border-[#1C4CB8] focus:ring-2 focus:ring-[#1C4CB8]/10 transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C8478] hover:text-[#24221F] p-1 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -121,7 +132,7 @@ export const AdminLoginPage: React.FC = () => {
                 onClick={handleQuickDemo}
                 className="text-[#1C4CB8] hover:underline text-[11px] font-semibold cursor-pointer"
               >
-                Fill demo info
+                Auto-fill
               </button>
             </div>
 
@@ -134,30 +145,32 @@ export const AdminLoginPage: React.FC = () => {
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Sign In to Admin</span>
+                  <span>Sign In to Admin Portal</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick Demo Helper */}
+          {/* Credentials Helper */}
           <div className="mt-6 pt-5 border-t border-[#F4EFE6] text-center">
             <div className="bg-[#FAF7F1] border border-[#E8E0D2] p-3 rounded-2xl text-[11px] text-[#7D766C]">
               <p className="font-semibold text-[#24221F] flex items-center justify-center gap-1">
                 <Sparkles className="w-3 h-3 text-[#DDA428]" />
-                Mock Administration Demo
+                Authorized Admin Credentials
               </p>
               <p className="mt-1">
-                Default: <span className="font-mono text-[#24221F]">admin@growkins.com</span> /{' '}
-                <span className="font-mono text-[#24221F]">admin123</span>
+                User: <span className="font-mono font-bold text-[#1C4CB8]">growkins-admin@gmail.com</span>
+              </p>
+              <p className="mt-0.5">
+                Pass: <span className="font-mono font-bold text-[#1C4CB8]">growkins123</span>
               </p>
             </div>
 
             <div className="mt-4">
               <button
-                onClick={() => window.location.href = '/'}
-                className="text-xs text-[#8C8478] hover:text-[#24221F] transition-colors"
+                onClick={() => (window.location.href = '/')}
+                className="text-xs text-[#8C8478] hover:text-[#24221F] transition-colors cursor-pointer"
               >
                 ← Back to customer storefront
               </button>
