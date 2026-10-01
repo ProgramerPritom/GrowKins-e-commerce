@@ -40,8 +40,6 @@ const CATEGORIES: Category[] = [
   'Books & Storytelling'
 ];
 
-const AGE_GROUPS: AgeRange[] = ['0–12M', '1–2Y', '3–5Y', '6–8Y', '9Y+'];
-
 const ALL_INTERESTS: Interest[] = [
   'Creating',
   'Building',
@@ -813,18 +811,23 @@ export const ProductEditorPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#24221F] mb-1">Age Group</label>
+                <label className="block text-xs font-bold text-[#24221F] mb-1">
+                  Age Stage / Persona
+                </label>
                 <select
                   value={formData.ageGroup}
                   onChange={(e) => handleFieldChange('ageGroup', e.target.value as AgeRange)}
                   className="w-full px-3 py-2.5 text-xs bg-white border border-[#E8E0D2] rounded-xl focus:outline-none focus:border-[#1C4CB8]"
                 >
-                  {AGE_GROUPS.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
+                  <option value="0–12M">0–12M · First Discoverer (0–12 months)</option>
+                  <option value="1–2Y">1–2Y · Tiny Explorer (1–2 years)</option>
+                  <option value="3–5Y">3–5Y · Big Imaginer (3–5 years)</option>
+                  <option value="6–8Y">6–8Y · Little Creator (6–8 years)</option>
+                  <option value="9Y+">9Y+ · Wonder Seeker (9+ years)</option>
                 </select>
+                <p className="text-[10px] text-[#8C8478] mt-1">
+                  Connects to homepage Stage Selector & Growth Timeline.
+                </p>
               </div>
 
               <div>

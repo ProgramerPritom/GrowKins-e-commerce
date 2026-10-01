@@ -18,17 +18,87 @@ export const ProductDetailPage: React.FC = () => {
     toggleWishlist, 
     setView,
     products,
-    productsLoading
+    productsLoading,
+    activeOrder
   } = useStore();
 
   const sourceProducts = products && products.length > 0 ? products : PRODUCTS;
-  const product = sourceProducts.find(p => p.id === selectedProductId) || sourceProducts[0] || PRODUCTS[0];
+  const rawProduct = sourceProducts.find(p => p.id === selectedProductId) || sourceProducts[0] || PRODUCTS[0];
+
+  // Robust field normalization for Google Sheets / live backend API payloads
+  const product = useMemo(() => {
+    const safeImages = {
+      main: Array.isArray(rawProduct.images) 
+        ? (rawProduct.images[0]?.url || (rawProduct as any).featuredImage || '') 
+        : (rawProduct.images?.main || (rawProduct as any).featuredImage || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80'),
+      secondary: Array.isArray(rawProduct.images) 
+        ? (rawProduct.images[1]?.url || rawProduct.images[0]?.url || '') 
+        : (rawProduct.images?.secondary || ''),
+      gallery: Array.isArray(rawProduct.images) 
+        ? rawProduct.images.map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean)
+        : (Array.isArray(rawProduct.images?.gallery) ? rawProduct.images.gallery : [])
+    };
+
+    const safeMaterials = Array.isArray(rawProduct.materials) 
+      ? rawProduct.materials 
+      : (rawProduct.materials ? [String(rawProduct.materials)] : ['Solid FSC European Beechwood', 'Organic Plant-Based Dyes']);
+
+    const safeBenefits = Array.isArray(rawProduct.benefits) && rawProduct.benefits.length > 0
+      ? rawProduct.benefits 
+      : (rawProduct.benefits ? [String(rawProduct.benefits)] : ['Fine motor', 'Sensory discovery', 'Spatial thinking']);
+
+    const safeInterests = Array.isArray(rawProduct.interests) && rawProduct.interests.length > 0
+      ? rawProduct.interests 
+      : ['Exploring', 'Building', 'Creating'];
+
+    const safeWhatsInside = Array.isArray(rawProduct.whatsInside) && rawProduct.whatsInside.length > 0
+      ? rawProduct.whatsInside 
+      : [
+          { name: rawProduct.name, count: '1 set', detail: 'Solid natural beechwood toy elements' },
+          { name: 'Montessori Play Guide', count: '1 pc', detail: 'Developmental milestones & play inspiration' },
+          { name: 'Organic Cotton Gift Pouch', count: '1 pc', detail: 'Breathable unbleached storage pouch' }
+        ];
+
+    const safeDevelopmentMilestones = Array.isArray(rawProduct.developmentMilestones) && rawProduct.developmentMilestones.length > 0
+      ? rawProduct.developmentMilestones
+      : [
+          {
+            title: 'Fine Motor Dexterity',
+            description: 'Refines hand-eye coordination, palm grasps, and tactile muscle control through independent manipulation.'
+          },
+          {
+            title: 'Spatial Thinking & Balance',
+            description: 'Encourages geometric reasoning, physical balance, and problem-solving as children explore cause-and-effect.'
+          },
+          {
+            title: 'Screen-Free Calm Focus',
+            description: 'Smooth natural textures and organic acoustic feedback promote sustained, mindful concentration in real play.'
+          }
+        ];
+
+    return {
+      ...rawProduct,
+      images: safeImages,
+      materials: safeMaterials,
+      benefits: safeBenefits,
+      interests: safeInterests,
+      whatsInside: safeWhatsInside,
+      developmentMilestones: safeDevelopmentMilestones,
+      whyKidsLoveIt: rawProduct.whyKidsLoveIt || rawProduct.description || 'Handcrafted with child-friendly proportions and silky-smooth textures that invite tactile curiosity and open-ended imagination.',
+      sensoryQuote: rawProduct.sensoryQuote || 'Thoughtfully handcrafted from natural organic materials for screen-free sensory discovery.',
+      dimensions: rawProduct.dimensions || 'Solid standard unit · Hand-sanded smooth curves',
+      careInstructions: rawProduct.careInstructions || 'Wipe with a slightly damp cloth. Condition occasionally with coconut or mustard oil.',
+      safetyNotes: rawProduct.safetyNotes || 'Tested and certified compliant with international EN71 & ASTM F963 child safety standards.'
+    };
+  }, [rawProduct]);
+
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(0);
   const [addedAnimation, setAddedAnimation] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [reviewSlide, setReviewSlide] = useState(0);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   // Reset image selection when product changes
   useEffect(() => {
@@ -47,10 +117,10 @@ export const ProductDetailPage: React.FC = () => {
     const raw = [
       { label: 'Studio Cutout', url: product.images.main },
       { label: 'Secondary Angle', url: product.images.secondary },
-      product.images.childHolding && { label: 'In Little Hands', url: product.images.childHolding },
-      product.images.inPlay && { label: 'In Play Action', url: product.images.inPlay },
-      product.images.detail && { label: 'Craft Detail', url: product.images.detail },
-      product.images.scaleRef && { label: 'Scale Reference', url: product.images.scaleRef }
+      (product.images as any).childHolding && { label: 'In Little Hands', url: (product.images as any).childHolding },
+      (product.images as any).inPlay && { label: 'In Play Action', url: (product.images as any).inPlay },
+      (product.images as any).detail && { label: 'Craft Detail', url: (product.images as any).detail },
+      (product.images as any).scaleRef && { label: 'Scale Reference', url: (product.images as any).scaleRef }
     ].filter(Boolean) as { label: string; url: string }[];
 
     const seen = new Set<string>();
@@ -73,7 +143,7 @@ export const ProductDetailPage: React.FC = () => {
   const isFavorited = isInWishlist(product.id);
 
   // Related products ("Keep the play going")
-  const relatedProducts = PRODUCTS.filter(p => p.id !== product.id).slice(0, 3);
+  const relatedProducts = sourceProducts.filter(p => p.id !== product.id).slice(0, 3);
 
   // FAQ list tailored for parents in Bangladesh in clean English
   const faqs = [
@@ -87,11 +157,11 @@ export const ProductDetailPage: React.FC = () => {
     },
     {
       q: "Is this piece age-appropriate and developmentally aligned?",
-      a: `Yes, this discovery is carefully scaled and calibrated for children aged ${product.ageBadge}. Its proportions, weight, and textures are aligned with international Montessori developmental milestones for fine motor dexterity, problem-solving, and sensory curiosity.`
+      a: `Yes, this discovery is carefully scaled and calibrated for children aged ${product.ageBadge || '1–5 years'}. Its proportions, weight, and textures are aligned with international Montessori developmental milestones for fine motor dexterity, problem-solving, and sensory curiosity.`
     },
     {
       q: "What materials are used and is it safe if mouthed?",
-      a: `Handcrafted from certified solid European beechwood (${product.materials.join(', ')}). Sealed with pure natural plant-based vegetable oils and organic beeswax. 100% free of lead, formaldehyde, phthalates, and harsh chemical varnishes.`
+      a: `Handcrafted from certified solid European beechwood (${(product.materials || []).join(', ')}). Sealed with pure natural plant-based vegetable oils and organic beeswax. 100% free of lead, formaldehyde, phthalates, and harsh chemical varnishes.`
     },
     {
       q: "What is your doorstep inspection and exchange policy?",
@@ -113,20 +183,31 @@ export const ProductDetailPage: React.FC = () => {
     <div className="bg-[#FAF7F1] py-6 sm:py-12 pb-28 lg:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Breadcrumbs - horizontally scrollable on mobile */}
-        <nav className="flex items-center gap-2 text-xs text-[#757169] mb-6 sm:mb-8 overflow-x-auto whitespace-nowrap no-scrollbar py-0.5">
-          <button onClick={() => setView('home')} className="hover:text-[#24221F] transition-colors shrink-0">
-            Home
+        {/* Breadcrumbs & Order Tracker Header */}
+        <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8 flex-wrap">
+          <nav className="flex items-center gap-2 text-xs text-[#757169] overflow-x-auto whitespace-nowrap no-scrollbar py-0.5">
+            <button onClick={() => setView('home')} className="hover:text-[#24221F] transition-colors shrink-0">
+              Home
+            </button>
+            <span className="shrink-0">›</span>
+            <button onClick={() => setView('shop')} className="hover:text-[#24221F] transition-colors shrink-0">
+              Shop
+            </button>
+            <span className="shrink-0">›</span>
+            <span className="text-[#24221F] font-medium shrink-0">{product.category}</span>
+            <span className="shrink-0">›</span>
+            <span className="text-[#24221F] font-semibold truncate max-w-[180px] sm:max-w-none">{product.name}</span>
+          </nav>
+
+          {/* Quick Track Orders Button */}
+          <button
+            onClick={() => setShowOrderModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#E8E0D2] hover:border-[#24221F] text-[#24221F] text-xs font-semibold shadow-2xs transition-all cursor-pointer shrink-0"
+          >
+            <PackageCheck className="w-3.5 h-3.5 text-[#1C4CB8]" />
+            <span>Track / View Orders</span>
           </button>
-          <span className="shrink-0">›</span>
-          <button onClick={() => setView('shop')} className="hover:text-[#24221F] transition-colors shrink-0">
-            Shop
-          </button>
-          <span className="shrink-0">›</span>
-          <span className="text-[#24221F] font-medium shrink-0">{product.category}</span>
-          <span className="shrink-0">›</span>
-          <span className="text-[#24221F] font-semibold truncate max-w-[180px] sm:max-w-none">{product.name}</span>
-        </nav>
+        </div>
 
         {/* Top Product Hero Split Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 mb-16 sm:mb-20 items-start">
@@ -604,6 +685,86 @@ export const ProductDetailPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Order Tracker / Recent Orders Modal */}
+      <AnimatePresence>
+        {showOrderModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl p-6 max-w-lg w-full border border-[#E8E0D2] shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto text-left"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E0D2]">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#FCF4DB] flex items-center justify-center text-[#A67E14]">
+                    <PackageCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-[#24221F]">Track Your Orders</h3>
+                    <p className="text-[11px] text-[#757169]">Cash on Delivery parcel status across Bangladesh</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowOrderModal(false)}
+                  className="w-8 h-8 rounded-full bg-[#FAF7F1] hover:bg-[#E8E0D2] text-[#24221F] flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {activeOrder ? (
+                <div className="space-y-3 bg-[#FAF7F1] rounded-2xl p-4 border border-[#E8E0D2]">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-[#1C4CB8]">{activeOrder.orderNumber}</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#E6EFE9] text-[#4F7A5E] text-[10px] font-bold uppercase">
+                      {activeOrder.status || 'Order received'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#24221F] space-y-1">
+                    <p><span className="text-[#757169]">Customer:</span> {activeOrder.delivery?.fullName || 'Valued Parent'}</p>
+                    <p><span className="text-[#757169]">Phone:</span> {activeOrder.delivery?.phone || '—'}</p>
+                    <p><span className="text-[#757169]">Delivery Address:</span> {activeOrder.delivery?.streetAddress}, {activeOrder.delivery?.district}</p>
+                    <p><span className="text-[#757169]">Payment Method:</span> 100% Cash on Delivery (৳{activeOrder.total})</p>
+                  </div>
+                  <div className="pt-2 border-t border-[#E8E0D2]/60">
+                    <p className="text-[11px] font-semibold text-[#757169] mb-1.5">Ordered Items:</p>
+                    <div className="space-y-1">
+                      {activeOrder.items?.map((item: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs text-[#24221F]">
+                          <span className="truncate pr-2">{item.product?.name || item.name} × {item.quantity}</span>
+                          <span className="font-semibold font-sans shrink-0">৳{(item.product?.price || item.price || 0) * item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 space-y-2">
+                  <PackageCheck className="w-10 h-10 text-[#A8A49C] mx-auto" />
+                  <p className="font-semibold text-sm text-[#24221F]">No active order session found</p>
+                  <p className="text-xs text-[#757169] max-w-xs mx-auto">
+                    Once you place a Cash on Delivery order, you can track parcel dispatch and courier status right here.
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowOrderModal(false);
+                    setView('shop');
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-[#24221F] text-white text-xs font-semibold hover:bg-[#1C4CB8] transition-colors cursor-pointer text-center"
+                >
+                  Continue Shopping
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Fullscreen Lightbox Modal */}
       <LightboxModal

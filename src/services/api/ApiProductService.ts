@@ -12,7 +12,15 @@ import { API_ENDPOINTS } from '../../lib/api/endpoints';
 
 export class ApiProductService implements IProductService {
   public list(params?: ProductFilterParams): Promise<PaginatedResponse<AdminProduct>> {
-    return apiClient.get<PaginatedResponse<AdminProduct>>(API_ENDPOINTS.products.list, params);
+    const cleanParams: any = {};
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '' && v !== 'all') {
+          cleanParams[k] = v;
+        }
+      });
+    }
+    return apiClient.get<PaginatedResponse<AdminProduct>>(API_ENDPOINTS.products.list, cleanParams);
   }
 
   public getById(id: string): Promise<ApiResponse<AdminProduct>> {

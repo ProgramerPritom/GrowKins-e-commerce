@@ -15,6 +15,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const isFavorited = isInWishlist(product.id);
 
+  const mainImg = Array.isArray(product.images) 
+    ? (product.images[0]?.url || (product as any).featuredImage || '') 
+    : (product.images?.main || (product as any).featuredImage || '');
+  const secImg = Array.isArray(product.images) 
+    ? (product.images[1]?.url || '') 
+    : (product.images?.secondary || '');
+
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     addToCart(product, 1);
@@ -44,16 +51,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Main vs Secondary Image Swap with smooth crossfade */}
         <div className="w-full h-full relative overflow-hidden">
           <img
-            src={product.images.main}
+            src={mainImg}
             alt={product.name}
             className={`w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-104 ${
-              isHovered && product.images.secondary ? 'opacity-0' : 'opacity-100'
+              isHovered && secImg ? 'opacity-0' : 'opacity-100'
             }`}
             loading="lazy"
           />
-          {product.images.secondary && (
+          {secImg && (
             <img
-              src={product.images.secondary}
+              src={secImg}
               alt={`${product.name} alternate view`}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-104 ${
                 isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'

@@ -8,12 +8,17 @@ import { ArrowRight, Sparkles, Compass, ShoppingBag } from 'lucide-react';
 import type { AgeRange } from '../../types';
 
 export const StageSelector: React.FC = () => {
-  const { setView, openProduct, setFilter } = useStore();
+  const { setView, openProduct, setFilter, products } = useStore();
   const { t } = useLanguage();
   const [activeStageId, setActiveStageId] = useState<AgeRange>('3–5Y');
 
+  const sourceProducts = products && products.length > 0 ? products : PRODUCTS;
   const activeStage = STAGES.find(s => s.id === activeStageId) || STAGES[2];
-  const matchedProducts = PRODUCTS.filter(p => activeStage.recommendedProductIds.includes(p.id));
+  
+  // Match products by recommended IDs or by ageGroup matching stage
+  const matchedProducts = sourceProducts.filter(
+    p => activeStage.recommendedProductIds.includes(p.id) || (p as any).ageGroup === activeStage.id
+  ).slice(0, 4);
 
   const handleExploreStage = () => {
     setFilter('age', [activeStage.id]);
@@ -178,7 +183,7 @@ export const StageSelector: React.FC = () => {
                       <div>
                         <div className="aspect-square rounded-xl overflow-hidden bg-[#FAF7F1] mb-3 relative">
                           <img
-                            src={product.images.main}
+                            src={Array.isArray(product.images) ? (product.images[0]?.url || (product as any).featuredImage) : (product.images?.main || (product as any).featuredImage || '')}
                             alt={product.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
