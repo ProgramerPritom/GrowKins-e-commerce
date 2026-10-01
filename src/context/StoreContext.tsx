@@ -126,8 +126,27 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | null>(null);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [view, setViewInternal] = useState<AppView>('home');
-  const [selectedProductId, setSelectedProductId] = useState<string>('woodland-balance-friends');
+  // Parse initial view and product from URL pathname
+  const getInitialRouteState = () => {
+    if (typeof window === 'undefined') return { initialView: 'home' as AppView, initialProduct: 'busy-cube-montessori' };
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/product/')) {
+      return { initialView: 'product' as AppView, initialProduct: pathname.replace('/product/', '') };
+    }
+    if (pathname.startsWith('/p/')) {
+      return { initialView: 'product' as AppView, initialProduct: pathname.replace('/p/', '') };
+    }
+    if (pathname === '/shop' || pathname === '/products') return { initialView: 'shop' as AppView, initialProduct: 'busy-cube-montessori' };
+    if (pathname === '/cart') return { initialView: 'cart' as AppView, initialProduct: 'busy-cube-montessori' };
+    if (pathname === '/checkout') return { initialView: 'checkout' as AppView, initialProduct: 'busy-cube-montessori' };
+    if (pathname === '/wishlist') return { initialView: 'wishlist' as AppView, initialProduct: 'busy-cube-montessori' };
+    if (pathname === '/our-story' || pathname === '/about') return { initialView: 'our-story' as AppView, initialProduct: 'busy-cube-montessori' };
+    return { initialView: 'home' as AppView, initialProduct: 'busy-cube-montessori' };
+  };
+
+  const initialRoute = getInitialRouteState();
+  const [view, setViewInternal] = useState<AppView>(initialRoute.initialView);
+  const [selectedProductId, setSelectedProductId] = useState<string>(initialRoute.initialProduct);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
 
@@ -304,13 +323,58 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setView = (newView: AppView) => {
     setViewInternal(newView);
+    if (typeof window !== 'undefined') {
+      const pathToPush = 
+        newView === 'home' ? '/' :
+        newView === 'shop' ? '/shop' :
+        newView === 'cart' ? '/cart' :
+        newView === 'checkout' ? '/checkout' :
+        newView === 'wishlist' ? '/wishlist' :
+        newView === 'our-story' ? '/our-story' :
+        newView === 'product' ? `/product/${selectedProductId}` : '/';
+      
+      if (window.location.pathname !== pathToPush) {
+        window.history.pushState({}, '', pathToPush);
+      }
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const openProduct = (productId: string) => {
     setSelectedProductId(productId);
-    setView('product');
+    setViewInternal('product');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', `/product/${productId}`);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Sync state when browser back/forward buttons are pressed
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith('/product/') || pathname.startsWith('/p/')) {
+        const prodId = pathname.replace('/product/', '').replace('/p/', '');
+        if (prodId) setSelectedProductId(prodId);
+        setViewInternal('product');
+      } else if (pathname === '/shop' || pathname === '/products') {
+        setViewInternal('shop');
+      } else if (pathname === '/cart') {
+        setViewInternal('cart');
+      } else if (pathname === '/checkout') {
+        setViewInternal('checkout');
+      } else if (pathname === '/wishlist') {
+        setViewInternal('wishlist');
+      } else if (pathname === '/our-story' || pathname === '/about') {
+        setViewInternal('our-story');
+      } else if (pathname === '/' || pathname === '') {
+        setViewInternal('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const addToCart = (product: Product | any, quantity = 1, variant?: any) => {
     // Normalize images if it's an apparel product with array of images

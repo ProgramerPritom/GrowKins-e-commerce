@@ -185,6 +185,10 @@ export const StageSelector: React.FC = () => {
                           <img
                             src={Array.isArray(product.images) ? (product.images[0]?.url || (product as any).featuredImage) : (product.images?.main || (product as any).featuredImage || '')}
                             alt={product.name}
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80';
+                            }}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <span className="absolute top-2 left-2 bg-[#F7E198] text-[#24221F] text-[10px] font-bold px-2 py-0.5 rounded-full">

@@ -3,51 +3,104 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../context/StoreContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { ArrowRight, Sparkles, Star, ChevronLeft, ChevronRight, ShieldCheck, Truck } from 'lucide-react';
+import { contentService } from '../../services';
+import type { HomepageCMS, HeroSlideCMS } from '../../types/admin';
 
-const HERO_SLIDES = [
+const FALLBACK_SLIDES: HeroSlideCMS[] = [
   {
+    id: 'slide-1',
     image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=1200&q=85',
     badgeAge: '0–8Y',
     badgeTitle: 'Montessori Open-Ended Play',
     badgeSubtitle: 'Screen-Free Sensory Development',
-    alt: 'Child playing peacefully with wooden toys in a bright Montessori playroom'
+    alt: 'Child playing peacefully with wooden toys in a bright Montessori playroom',
+    enabled: true,
+    sortOrder: 1
   },
   {
+    id: 'slide-2',
     image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=1200&q=85',
     badgeAge: '1–5Y',
     badgeTitle: 'Natural Beechwood Stacking',
     badgeSubtitle: 'Tactile Equilibrium & Motor Skills',
-    alt: 'Wooden rainbow stacking arch and handcrafted balancing toys'
+    alt: 'Wooden rainbow stacking arch and handcrafted balancing toys',
+    enabled: true,
+    sortOrder: 2
   },
   {
+    id: 'slide-3',
     image: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1200&q=85',
     badgeAge: '2–7Y',
     badgeTitle: 'Imaginative World Building',
     badgeSubtitle: 'Architectural Blocks & Animal Figures',
-    alt: 'Parent and child building wooden block castles together'
+    alt: 'Parent and child building wooden block castles together',
+    enabled: true,
+    sortOrder: 3
   }
 ];
 
 export const HeroPlayroom: React.FC = () => {
   const { setView, setFilter } = useStore();
   const { t } = useLanguage();
+  const [cms, setCms] = useState<HomepageCMS | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Auto-advance slider every 4.5 seconds
+  const loadCmsData = async () => {
+    try {
+      const res = await contentService.getHomepage();
+      if (res?.data) {
+        setCms(res.data);
+      }
+    } catch (e) {
+      console.warn('HeroPlayroom failed to load live CMS data:', e);
+    }
+  };
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 4500);
-    return () => clearInterval(timer);
+    loadCmsData();
+
+    const handleContentUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.type === 'homepage' && customEvent.detail?.data) {
+        setCms(customEvent.detail.data);
+      } else {
+        loadCmsData();
+      }
+    };
+
+    window.addEventListener('growkins:content-updated', handleContentUpdate);
+    return () => window.removeEventListener('growkins:content-updated', handleContentUpdate);
   }, []);
 
+  const activeSlides: HeroSlideCMS[] = (
+    cms?.hero?.slides && cms.hero.slides.length > 0
+      ? cms.hero.slides.filter((s) => s.enabled !== false)
+      : FALLBACK_SLIDES
+  );
+
+  const total = activeSlides.length;
+
+  // Auto-advance slider every 4.5 seconds
+  useEffect(() => {
+    if (total <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % total);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [total]);
+
+  const safeIndex = total > 0 ? (currentSlide >= total ? 0 : currentSlide) : 0;
+  const slide = activeSlides[safeIndex] || FALLBACK_SLIDES[0];
+
   const handleNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    if (total <= 1) return;
+    setCurrentSlide((prev) => (prev + 1) % total);
   };
 
   const handlePrevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+    if (total <= 1) return;
+    setCurrentSlide((prev) => (prev - 1 + total) % total);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -58,7 +111,8 @@ export const HeroPlayroom: React.FC = () => {
     setMousePos({ x, y });
   };
 
-  const slide = HERO_SLIDES[currentSlide];
+  const isHeroEnabled = cms?.hero?.enabled ?? true;
+  if (!isHeroEnabled) return null;
 
   return (
     <section 
@@ -88,21 +142,27 @@ export const HeroPlayroom: React.FC = () => {
             {/* Subtle Pill Tag */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFFFF]/80 border border-[#E8E0D2] shadow-xs text-xs font-semibold tracking-wider uppercase text-[#757169]">
               <Sparkles className="w-3.5 h-3.5 text-[#A67E14]" />
-              <span>{t.hero.tag}</span>
+              <span>{cms?.hero?.eyebrow || t.hero.tag}</span>
             </div>
 
             {/* Headline */}
             <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#24221F] leading-[1.12] sm:leading-[1.08]">
-              {t.hero.headlinePart1}{' '}
-              <span className="italic font-normal text-[#F28F79] inline-block hover:scale-105 transition-transform duration-300">
-                {t.hero.headlineAccent}
-              </span>{' '}
-              {t.hero.headlinePart2}
+              {cms?.hero?.headline ? (
+                cms.hero.headline
+              ) : (
+                <>
+                  {t.hero.headlinePart1}{' '}
+                  <span className="italic font-normal text-[#F28F79] inline-block hover:scale-105 transition-transform duration-300">
+                    {t.hero.headlineAccent}
+                  </span>{' '}
+                  {t.hero.headlinePart2}
+                </>
+              )}
             </h1>
 
             {/* Supporting paragraph */}
             <p className="text-base sm:text-xl text-[#6E6A63] max-w-lg leading-relaxed font-normal">
-              {t.hero.subheading}
+              {cms?.hero?.subheadline || t.hero.subheading}
             </p>
 
             {/* CTAs */}
@@ -114,7 +174,7 @@ export const HeroPlayroom: React.FC = () => {
                 }}
                 className="px-7 py-3.5 sm:px-8 sm:py-4 rounded-full bg-[#24221F] text-[#FAF7F1] text-sm font-semibold hover:bg-[#1C4CB8] transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 group cursor-pointer"
               >
-                <span>{t.hero.shopByAge}</span>
+                <span>{cms?.hero?.secondaryCtaLabel || t.hero.shopByAge}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
 
@@ -122,7 +182,7 @@ export const HeroPlayroom: React.FC = () => {
                 onClick={() => setView('shop')}
                 className="px-7 py-3.5 sm:px-8 sm:py-4 rounded-full bg-[#FFFFFF] border border-[#D9D3C7] text-[#24221F] text-sm font-semibold hover:bg-[#F4EFE6] transition-all duration-200 shadow-xs active:scale-95 cursor-pointer text-center"
               >
-                {t.hero.exploreAll}
+                {cms?.hero?.primaryCtaLabel || t.hero.exploreAll}
               </button>
             </div>
 
@@ -130,11 +190,11 @@ export const HeroPlayroom: React.FC = () => {
             <div className="pt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-[#757169] border-t border-[#E8E0D2]/60 max-w-md">
               <span className="flex items-center gap-1.5 font-medium">
                 <Truck className="w-4 h-4 text-[#4F7A5E] shrink-0" />
-                {t.hero.codNotice}
+                {cms?.hero?.trustBullet1 || t.hero.codNotice}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
                 <ShieldCheck className="w-4 h-4 text-[#A67E14] shrink-0" />
-                {t.hero.woodNotice}
+                {cms?.hero?.trustBullet2 || t.hero.woodNotice}
               </span>
             </div>
 
@@ -153,14 +213,18 @@ export const HeroPlayroom: React.FC = () => {
               >
                 <AnimatePresence mode="wait">
                   <motion.img
-                    key={currentSlide}
+                    key={safeIndex}
                     src={slide.image}
                     alt={slide.alt}
+                    referrerPolicy="no-referrer"
                     initial={{ opacity: 0, scale: 1.05 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
                     className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = FALLBACK_SLIDES[0].image;
+                    }}
                   />
                 </AnimatePresence>
 
@@ -178,36 +242,40 @@ export const HeroPlayroom: React.FC = () => {
                 </div>
 
                 {/* Slider Navigation Arrows */}
-                <div className="absolute top-1/2 -translate-y-1/2 left-3 right-3 flex items-center justify-between opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 z-10 pointer-events-auto">
-                  <button
-                    onClick={handlePrevSlide}
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm text-[#24221F] hover:bg-white shadow-md flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                  <button
-                    onClick={handleNextSlide}
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm text-[#24221F] hover:bg-white shadow-md flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                </div>
+                {total > 1 && (
+                  <div className="absolute top-1/2 -translate-y-1/2 left-3 right-3 flex items-center justify-between opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 z-10 pointer-events-auto">
+                    <button
+                      onClick={handlePrevSlide}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm text-[#24221F] hover:bg-white shadow-md flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                    <button
+                      onClick={handleNextSlide}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm text-[#24221F] hover:bg-white shadow-md flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                  </div>
+                )}
 
                 {/* Slider Indicator Dots */}
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                  {HERO_SLIDES.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentSlide(idx)}
-                      className={`h-2 rounded-full transition-all cursor-pointer ${
-                        idx === currentSlide ? 'w-5 bg-white' : 'w-2 bg-white/60 hover:bg-white/80'
-                      }`}
-                      aria-label={`Go to slide ${idx + 1}`}
-                    />
-                  ))}
-                </div>
+                {total > 1 && (
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                    {activeSlides.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentSlide(idx)}
+                        className={`h-2 rounded-full transition-all cursor-pointer ${
+                          idx === safeIndex ? 'w-5 bg-white' : 'w-2 bg-white/60 hover:bg-white/80'
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Floating Tactile Cobalt Star Badge */}
@@ -233,6 +301,7 @@ export const HeroPlayroom: React.FC = () => {
                   <img
                     src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=200&q=80"
                     alt="Sunrise Arch"
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
                   />
                 </div>

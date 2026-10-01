@@ -49,21 +49,18 @@ if (typeof window !== 'undefined') {
 }
 
 const AppContent: React.FC = () => {
-  const { view, setView, toast, hideToast } = useStore();
+  const { view, toast, hideToast } = useStore();
 
   React.useEffect(() => {
     const handlePop = () => {
       const path = window.location.pathname;
-      if ((path === '/' || path === '') && view !== 'home' && view !== 'cart' && view !== 'checkout') {
-        setView('home');
+      if (path === '/' || path === '') {
+        // Only on actual browser back button pop
       }
     };
     window.addEventListener('popstate', handlePop);
-    if ((window.location.pathname === '/' || window.location.pathname === '') && view !== 'home' && view !== 'cart' && view !== 'checkout' && view !== 'wishlist') {
-      setView('home');
-    }
     return () => window.removeEventListener('popstate', handlePop);
-  }, [view, setView]);
+  }, []);
 
   return (
     <div

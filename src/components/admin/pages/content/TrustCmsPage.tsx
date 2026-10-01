@@ -54,7 +54,7 @@ export const TrustCmsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl pb-16">
       <PageHeader
         title="Trust & Brand Philosophy CMS"
         subtitle="Manage the safety certifications, non-toxic guarantees, and heirloom Montessori philosophy."
@@ -81,11 +81,17 @@ export const TrustCmsPage: React.FC = () => {
             <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer">
               <input
                 type="checkbox"
-                checked={cms.brandPhilosophy.enabled}
+                checked={cms.brandPhilosophy?.enabled ?? true}
                 onChange={(e) =>
                   setCms({
                     ...cms,
-                    brandPhilosophy: { ...cms.brandPhilosophy, enabled: e.target.checked }
+                    brandPhilosophy: {
+                      ...cms.brandPhilosophy,
+                      heading: cms.brandPhilosophy?.heading ?? '',
+                      subheading: cms.brandPhilosophy?.subheading ?? '',
+                      quote: cms.brandPhilosophy?.quote ?? '',
+                      enabled: e.target.checked
+                    }
                   })
                 }
                 className="w-4 h-4 rounded border-[#D0C8BA] text-[#1C4CB8] accent-[#1C4CB8]"
@@ -98,11 +104,17 @@ export const TrustCmsPage: React.FC = () => {
             <label className="block text-xs font-bold text-[#24221F] mb-1">Section Title</label>
             <input
               type="text"
-              value={cms.brandPhilosophy.heading}
+              value={cms.brandPhilosophy?.heading ?? ''}
               onChange={(e) =>
                 setCms({
                   ...cms,
-                  brandPhilosophy: { ...cms.brandPhilosophy, heading: e.target.value }
+                  brandPhilosophy: {
+                    ...cms.brandPhilosophy,
+                    enabled: cms.brandPhilosophy?.enabled ?? true,
+                    subheading: cms.brandPhilosophy?.subheading ?? '',
+                    quote: cms.brandPhilosophy?.quote ?? '',
+                    heading: e.target.value
+                  }
                 })
               }
               className="w-full px-3.5 py-2.5 text-xs border border-[#E8E0D2] rounded-xl focus:outline-none focus:border-[#1C4CB8]"
@@ -113,11 +125,17 @@ export const TrustCmsPage: React.FC = () => {
             <label className="block text-xs font-bold text-[#24221F] mb-1">Subheading</label>
             <textarea
               rows={2}
-              value={cms.brandPhilosophy.subheading}
+              value={cms.brandPhilosophy?.subheading ?? ''}
               onChange={(e) =>
                 setCms({
                   ...cms,
-                  brandPhilosophy: { ...cms.brandPhilosophy, subheading: e.target.value }
+                  brandPhilosophy: {
+                    ...cms.brandPhilosophy,
+                    enabled: cms.brandPhilosophy?.enabled ?? true,
+                    heading: cms.brandPhilosophy?.heading ?? '',
+                    quote: cms.brandPhilosophy?.quote ?? '',
+                    subheading: e.target.value
+                  }
                 })
               }
               className="w-full px-3.5 py-2.5 text-xs border border-[#E8E0D2] rounded-xl focus:outline-none focus:border-[#1C4CB8]"
@@ -130,11 +148,17 @@ export const TrustCmsPage: React.FC = () => {
             </label>
             <input
               type="text"
-              value={cms.brandPhilosophy.quote}
+              value={cms.brandPhilosophy?.quote ?? ''}
               onChange={(e) =>
                 setCms({
                   ...cms,
-                  brandPhilosophy: { ...cms.brandPhilosophy, quote: e.target.value }
+                  brandPhilosophy: {
+                    ...cms.brandPhilosophy,
+                    enabled: cms.brandPhilosophy?.enabled ?? true,
+                    heading: cms.brandPhilosophy?.heading ?? '',
+                    subheading: cms.brandPhilosophy?.subheading ?? '',
+                    quote: e.target.value
+                  }
                 })
               }
               className="w-full px-3.5 py-2.5 text-xs border border-[#E8E0D2] rounded-xl focus:outline-none focus:border-[#1C4CB8]"

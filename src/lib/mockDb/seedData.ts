@@ -658,7 +658,53 @@ export const INITIAL_HOMEPAGE_CMS: HomepageCMS = {
     enabled: true,
     heading: 'Moments of Wonder at Home',
     subheading: 'Real playrooms in Dhanmondi, Gulshan, Uttara and beyond.',
-    handle: '@growkins.bd'
+    handle: '@growkins.bd',
+    testimonials: [
+      {
+        id: 't-1',
+        quote: 'My daughter has reached for the Woodland Balance Friends every morning for three weeks.',
+        author: 'Maya S.',
+        role: 'Mum of two (aged 2 & 4)',
+        location: 'Dhanmondi, Dhaka',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+        rating: 5,
+        enabled: true,
+        sortOrder: 1
+      },
+      {
+        id: 't-2',
+        quote: 'Finally, genuine chemical-free wooden toys in Bangladesh. Delivery was next-day with cash on delivery.',
+        author: 'Tanvir & Farah Ahmed',
+        role: 'Parents of 18M baby',
+        location: 'Uttara, Dhaka',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+        rating: 5,
+        enabled: true,
+        sortOrder: 2
+      },
+      {
+        id: 't-3',
+        quote: 'The Sunrise Stacking Arch transformed our living room. Peaceful, screen-free playtime that lasts over an hour!',
+        author: 'Nusrat Jahan',
+        role: 'Mother & Early Educator',
+        location: 'Gulshan, Dhaka',
+        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+        rating: 5,
+        enabled: true,
+        sortOrder: 3
+      },
+      {
+        id: 't-4',
+        quote: 'Ordered from Chittagong with cash on delivery. Courier called ahead and parcel arrived in perfect condition.',
+        author: 'Dr. Sabina Yasmin',
+        role: 'Pediatrician & Mother of 3Y',
+        location: 'Nasirabad, Chattogram',
+        avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
+        rating: 5,
+        enabled: true,
+        sortOrder: 4
+      }
+    ]
   },
   recommendationQuiz: {
     enabled: true,

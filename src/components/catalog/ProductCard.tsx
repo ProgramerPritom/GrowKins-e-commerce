@@ -53,6 +53,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <img
             src={mainImg}
             alt={product.name}
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80';
+            }}
             className={`w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-104 ${
               isHovered && secImg ? 'opacity-0' : 'opacity-100'
             }`}
@@ -62,6 +66,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <img
               src={secImg}
               alt={`${product.name} alternate view`}
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=800&q=80';
+              }}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-104 ${
                 isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}

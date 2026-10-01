@@ -1,7 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, Heart } from 'lucide-react';
+import { contentService } from '../../services';
+import type { HomepageCMS } from '../../types/admin';
 
 export const CommunitySection: React.FC = () => {
+  const [cms, setCms] = useState<HomepageCMS | null>(null);
+
+  const loadCms = async () => {
+    try {
+      const res = await contentService.getHomepage();
+      if (res?.data) setCms(res.data);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
+  useEffect(() => {
+    loadCms();
+    const handleUpdate = (e: Event) => {
+      const ce = e as CustomEvent;
+      if (ce.detail?.type === 'homepage' && ce.detail?.data) setCms(ce.detail.data);
+      else loadCms();
+    };
+    window.addEventListener('growkins:content-updated', handleUpdate);
+    return () => window.removeEventListener('growkins:content-updated', handleUpdate);
+  }, []);
+
+  const isEnabled = cms?.community?.enabled ?? true;
+  if (!isEnabled) return null;
+
+  const heading = cms?.community?.heading || 'Little moments, shared.';
+  const subheading =
+    cms?.community?.subheading ||
+    'Glimpses from family homes across Bangladesh. Real playrooms, quiet mornings, and big imaginative leaps.';
+
   const communityPhotos = [
     {
       img: 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=600&q=80',
@@ -36,10 +68,10 @@ export const CommunitySection: React.FC = () => {
             <span>Community Stories</span>
           </div>
           <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#24221F]">
-            Little moments, shared.
+            {heading}
           </h2>
           <p className="text-xs sm:text-base text-[#6E6A63] max-w-lg">
-            Glimpses from family homes across the country. Real playrooms, quiet mornings, and big imaginative leaps.
+            {subheading}
           </p>
         </div>
 
@@ -53,13 +85,14 @@ export const CommunitySection: React.FC = () => {
               <img
                 src={item.img}
                 alt={item.caption}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500 ease-out"
               />
 
               {/* Hover caption overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 sm:p-4 text-white text-left">
                 <p className="font-serif text-xs sm:text-sm font-semibold leading-tight line-clamp-2">
-                  "{item.caption}"
+                  &ldquo;{item.caption}&rdquo;
                 </p>
                 <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-white/80 mt-1">
                   <span>{item.author}</span>

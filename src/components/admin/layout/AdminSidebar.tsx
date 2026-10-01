@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   Navigation,
   FileText,
@@ -23,6 +24,7 @@ import {
   Shirt,
   Ruler
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminRouter } from '../../../context/AdminRouterContext';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 
@@ -41,6 +43,29 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const { path, navigate } = useAdminRouter();
   const { user, logout } = useAdminAuth();
+
+  // Collapsible groups state persisted to localStorage
+  const [collapsedGroups, setCollapsedGroups] = React.useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('growkins_admin_sidebar_collapsed_groups');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {};
+  });
+
+  const toggleGroup = (groupName: string) => {
+    setCollapsedGroups((prev) => {
+      const updated = { ...prev, [groupName]: !prev[groupName] };
+      try {
+        localStorage.setItem('growkins_admin_sidebar_collapsed_groups', JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updated;
+    });
+  };
 
   const handleNav = (to: string) => {
     navigate(to);
@@ -159,41 +184,79 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
 
         {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {navSections.map((section, sIdx) => (
-            <div key={sIdx}>
-              {section.group && !collapsed && (
-                <div className="px-3 mb-2 text-[10px] uppercase font-bold tracking-wider text-[#9E9689]">
-                  {section.group}
-                </div>
-              )}
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+          {navSections.map((section, sIdx) => {
+            const groupName = section.group;
+            const isGroupCollapsed = groupName ? !!collapsedGroups[groupName] : false;
+            const hasActiveItem = section.items.some(
+              (item) => path === item.path || (item.path !== '/admin/dashboard' && path.startsWith(item.path))
+            );
 
-              <nav className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = path === item.path || (item.path !== '/admin/dashboard' && path.startsWith(item.path));
-
-                  return (
-                    <button
-                      key={item.path}
-                      onClick={() => handleNav(item.path)}
-                      title={collapsed ? item.label : undefined}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        collapsed ? 'justify-center' : ''
-                      } ${
-                        isActive
-                          ? 'bg-[#1C4CB8] text-white shadow-xs'
-                          : 'text-[#635E55] hover:text-[#24221F] hover:bg-[#F4EFE6]'
+            return (
+              <div key={sIdx} className="space-y-1">
+                {groupName && !collapsed && (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(groupName)}
+                    className="w-full px-3 py-1.5 flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-[#9E9689] hover:text-[#24221F] rounded-lg transition-colors cursor-pointer group select-none"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span>{groupName}</span>
+                      {hasActiveItem && isGroupCollapsed && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#1C4CB8]" />
+                      )}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 text-[#9E9689] group-hover:text-[#24221F] ${
+                        isGroupCollapsed ? '-rotate-90' : 'rotate-0'
                       }`}
+                    />
+                  </button>
+                )}
+
+                <AnimatePresence initial={false}>
+                  {(!isGroupCollapsed || collapsed) && (
+                    <motion.nav
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18, ease: 'easeInOut' }}
+                      className="overflow-hidden space-y-1"
                     >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#7D766C]'}`} />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          ))}
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive =
+                          path === item.path ||
+                          (item.path !== '/admin/dashboard' && path.startsWith(item.path));
+
+                        return (
+                          <button
+                            key={item.path}
+                            onClick={() => handleNav(item.path)}
+                            title={collapsed ? item.label : undefined}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                              collapsed ? 'justify-center' : ''
+                            } ${
+                              isActive
+                                ? 'bg-[#1C4CB8] text-white shadow-xs'
+                                : 'text-[#635E55] hover:text-[#24221F] hover:bg-[#F4EFE6]'
+                            }`}
+                          >
+                            <Icon
+                              className={`w-4 h-4 shrink-0 ${
+                                isActive ? 'text-white' : 'text-[#7D766C]'
+                              }`}
+                            />
+                            {!collapsed && <span className="truncate">{item.label}</span>}
+                          </button>
+                        );
+                      })}
+                    </motion.nav>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </div>
 
         {/* Footer Actions & Profile */}

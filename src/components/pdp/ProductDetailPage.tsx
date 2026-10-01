@@ -225,6 +225,10 @@ export const ProductDetailPage: React.FC = () => {
                   key={selectedImageIndex}
                   src={currentImageUrl}
                   alt={product.name}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80';
+                  }}
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
@@ -255,14 +259,18 @@ export const ProductDetailPage: React.FC = () => {
                   onClick={() => setSelectedImageIndex(idx)}
                   className={`w-14 h-14 sm:w-auto sm:h-auto aspect-square shrink-0 rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all p-0.5 bg-white relative cursor-pointer ${
                     selectedImageIndex === idx 
-                      ? 'border-[#1C4CB8] ring-2 ring-[#1C4CB8]/20' 
-                      : 'border-[#E8E0D2] opacity-75 hover:opacity-100'
+                    ? 'border-[#1C4CB8] ring-2 ring-[#1C4CB8]/20' 
+                    : 'border-[#E8E0D2] opacity-75 hover:opacity-100'
                   }`}
                   title={item.label}
                 >
                   <img
                     src={item.url}
                     alt={item.label}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80';
+                    }}
                     className="w-full h-full object-cover rounded-lg sm:rounded-xl"
                   />
                 </motion.button>

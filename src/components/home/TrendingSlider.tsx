@@ -99,8 +99,13 @@ export const TrendingSlider: React.FC = () => {
                 {/* Image Container */}
                 <div className="aspect-square rounded-2xl overflow-hidden bg-[#FAF7F1] relative mb-3.5">
                   <img
-                    src={product.images.main}
+                    src={Array.isArray(product.images) ? (product.images[0]?.url || (product as any).featuredImage || '') : (product.images?.main || (product as any).featuredImage || '')}
                     alt={product.name}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      // Graceful fallback if drive link fails
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80';
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   {/* Badge */}

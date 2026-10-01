@@ -13,6 +13,18 @@ export interface HeroSlideCMS {
   sortOrder: number;
 }
 
+export interface TestimonialItem {
+  id: string;
+  quote: string;
+  author: string;
+  role: string;
+  location: string;
+  avatar: string;
+  rating: number;
+  enabled?: boolean;
+  sortOrder?: number;
+}
+
 export interface HomepageCMS {
   hero: {
     enabled: boolean;
@@ -56,6 +68,7 @@ export interface HomepageCMS {
     heading: string;
     subheading: string;
     handle: string;
+    testimonials?: TestimonialItem[];
   };
   recommendationQuiz: {
     enabled: boolean;

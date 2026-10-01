@@ -1,7 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Heart, Sparkles, RotateCcw, Leaf, Baby } from 'lucide-react';
+import { contentService } from '../../services';
+import type { HomepageCMS } from '../../types/admin';
 
 export const BrandPhilosophy: React.FC = () => {
+  const [cms, setCms] = useState<HomepageCMS | null>(null);
+
+  const loadCms = async () => {
+    try {
+      const res = await contentService.getHomepage();
+      if (res?.data) setCms(res.data);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
+  useEffect(() => {
+    loadCms();
+    const handleUpdate = (e: Event) => {
+      const ce = e as CustomEvent;
+      if (ce.detail?.type === 'homepage' && ce.detail?.data) setCms(ce.detail.data);
+      else loadCms();
+    };
+    window.addEventListener('growkins:content-updated', handleUpdate);
+    return () => window.removeEventListener('growkins:content-updated', handleUpdate);
+  }, []);
+
+  const isEnabled = cms?.brandPhilosophy?.enabled ?? true;
+  if (!isEnabled) return null;
+
+  const heading = cms?.brandPhilosophy?.heading || 'Made for little hands.';
+  const subheading =
+    cms?.brandPhilosophy?.subheading ||
+    'We know every purchase is an act of trust. You don’t need more plastic clutter in the hallway — you need toys that hold up to toddler energy, nurture natural curiosity, and look at home in your space.';
+
   return (
     <section className="py-12 sm:py-20 md:py-28 bg-[#24221F] text-[#FAF7F1] relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -15,15 +47,21 @@ export const BrandPhilosophy: React.FC = () => {
             </div>
 
             <h2 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#FAF7F1] leading-[1.18] sm:leading-[1.15]">
-              Made for little hands.{' '}
+              {heading}{' '}
               <span className="italic font-normal text-[#F28F79] block mt-1">
                 Chosen by grown-ups.
               </span>
             </h2>
 
             <p className="text-sm sm:text-lg text-[#A8A49C] leading-relaxed max-w-lg">
-              We know every purchase is an act of trust. You don’t need more plastic clutter in the hallway — you need toys that hold up to toddler energy, nurture natural curiosity, and look at home in your space.
+              {subheading}
             </p>
+
+            {cms?.brandPhilosophy?.quote && (
+              <blockquote className="text-xs sm:text-sm text-[#F7E198] italic font-serif border-l-2 border-[#F7E198]/40 pl-3 py-1">
+                {cms.brandPhilosophy.quote}
+              </blockquote>
+            )}
 
             <div className="pt-2 text-xs text-[#FAF7F1]/80 flex items-center gap-3">
               <span className="inline-block w-2 h-2 rounded-full bg-[#A3C1AD]"></span>
