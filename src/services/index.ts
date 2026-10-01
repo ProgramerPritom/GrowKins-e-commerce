@@ -1,6 +1,6 @@
 // Active Service Locator / Switcher
-// Set VITE_USE_MOCK_API=false in .env to connect to live backend API.
-export const USE_MOCK_API = (import.meta as any).env?.VITE_USE_MOCK_API !== 'false';
+// Default to Live Backend API unless explicitly enabled with VITE_USE_MOCK_API=true
+export const USE_MOCK_API = (import.meta as any).env?.VITE_USE_MOCK_API === 'true';
 
 import { mockProductService } from './mock/MockProductService';
 import { apiProductService } from './api/ApiProductService';
