@@ -86,6 +86,7 @@ export interface Product {
   careInstructions: string;
   safetyNotes: string;
   inStock: boolean;
+  videoUrl?: string;
 }
 
 export interface CartVariantInfo {

@@ -69,6 +69,7 @@ export interface AdminProduct {
   // Media
   images: ProductImageItem[];
   featuredImageId?: string;
+  videoUrl?: string;
 
   // Dimensions & Care
   dimensions: string;
@@ -115,6 +116,7 @@ export interface CreateProductPayload {
   developmentMilestones: DevelopmentMilestone[];
   whatsInside: WhatsInsideItem[];
   images: ProductImageItem[];
+  videoUrl?: string;
   dimensions: string;
   careInstructions: string;
   safetyNotes: string;

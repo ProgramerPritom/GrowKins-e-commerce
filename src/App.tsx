@@ -30,6 +30,8 @@ import { AnimatedPage } from './components/motion/AnimatedPage';
 import { Check } from 'lucide-react';
 import { AdminApp } from './components/admin/AdminApp';
 import { ClothingApp } from './components/clothing/ClothingApp';
+import { GrowKinsToyWorldApp } from './components/toy-world/GrowKinsToyWorldApp';
+import { ProviderApp } from './components/provider/ProviderApp';
 
 // Global history interceptor to ensure popstate is dispatched when pushState or replaceState is called
 if (typeof window !== 'undefined') {
@@ -243,6 +245,14 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  if (currentPath.startsWith('/provider')) {
+    return <ProviderApp />;
+  }
+
+  if (currentPath.startsWith('/growkins-toy-world') || currentPath.startsWith('/toy-world')) {
+    return <GrowKinsToyWorldApp />;
+  }
 
   if (currentPath.startsWith('/admin')) {
     return <AdminApp />;

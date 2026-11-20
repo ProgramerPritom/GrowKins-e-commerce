@@ -6,7 +6,8 @@ import {
   Trash2,
   Image as ImageIcon,
   MoveUp,
-  MoveDown
+  MoveDown,
+  Play
 } from 'lucide-react';
 import { PageHeader } from '../../layout/PageHeader';
 import { MediaPicker } from '../../common/MediaPicker';
@@ -132,6 +133,7 @@ export const ProductEditorPage: React.FC = () => {
       sku: 'GK-NEW-101'
     },
     featured: false,
+    videoUrl: '',
     seo: {
       metaTitle: '',
       metaDescription: ''
@@ -186,6 +188,7 @@ export const ProductEditorPage: React.FC = () => {
           sku: `GK-${p.id}`
         },
         featured: p.featured || false,
+        videoUrl: p.videoUrl || '',
         seo: p.seo || { metaTitle: '', metaDescription: '' }
       });
     } catch (err: any) {
@@ -554,6 +557,33 @@ export const ProductEditorPage: React.FC = () => {
         <div className="bg-white border border-[#E8E0D2] rounded-2xl p-6 shadow-xs space-y-6">
           <div className="flex items-center justify-between">
             <div>
+              {/* YouTube Video URL Input */}
+              <div className="mb-6 p-4 rounded-xl bg-[#FAF7F1] border border-[#E8E0D2] space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-[#24221F]">YouTube Demonstration Video Link</h4>
+                    <p className="text-[11px] text-[#8C8478]">
+                      Paste standard YouTube URL, Shorts, or youtu.be link to showcase in customer landing page demo modal.
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="url"
+                  value={formData.videoUrl || ''}
+                  onChange={(e) => handleFieldChange('videoUrl', e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-3.5 py-2 text-xs bg-white border border-[#E8E0D2] rounded-xl text-[#24221F] focus:outline-none focus:border-[#E76F51]"
+                />
+                {formData.videoUrl && (
+                  <p className="text-[10px] text-emerald-700 font-bold">
+                    ✓ Video link configured for landing page demo modal
+                  </p>
+                )}
+              </div>
+
               <h3 className="font-serif text-sm font-bold text-[#24221F]">Product Images & Angles</h3>
               <p className="text-xs text-[#8C8478]">
                 Primary photo, lifestyle playroom shots, details, and scale references.
