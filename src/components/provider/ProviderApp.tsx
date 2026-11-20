@@ -44,6 +44,18 @@ export const ProviderApp: React.FC = () => {
   const [productsPerPage] = useState<number>(12);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
+  // Active Landing Products Selection State (Controls what shows on /growkins-toy-world)
+  const [activeLandingProductIds, setActiveLandingProductIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('gk_active_toy_world_ids');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Failed to parse saved active toy ids', e);
+    }
+    return PRODUCTS.slice(0, 20).map(p => p.id);
+  });
+  const [productVisibilityFilter, setProductVisibilityFilter] = useState<'all' | 'landing_active' | 'landing_inactive'>('all');
+
   // Product Form State
   const [formName, setFormName] = useState<string>('');
   const [formSubtitle, setFormSubtitle] = useState<string>('');
@@ -240,7 +252,15 @@ export const ProviderApp: React.FC = () => {
         await productService.update(editingProductId, payload);
         showToast('খেলনা পণ্যটি সফলভাবে আপডেট হয়েছে!');
       } else {
-        await productService.create(payload);
+        const created = await productService.create(payload);
+        const newId = (created as any)?.data?.id || `toy_${Date.now()}`;
+        if (formStatus === 'active') {
+          setActiveLandingProductIds(prev => {
+            const updated = [...prev, newId];
+            localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(updated));
+            return updated;
+          });
+        }
         showToast('নতুন খেলনা সফলভাবে যুক্ত হয়েছে এবং ল্যান্ডিং পেজে দৃশ্যমান হবে!');
       }
 
@@ -293,15 +313,65 @@ export const ProviderApp: React.FC = () => {
     return filteredOrders.slice(start, start + ordersPerPage);
   }, [filteredOrders, orderPage, ordersPerPage]);
 
-  // Filtered Products
+  // Filtered Products with Visibility Filter
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const q = productSearchQuery.toLowerCase().trim();
-      return !q ||
+      const matchesSearch = !q ||
         p.name?.toLowerCase().includes(q) ||
         p.subtitle?.toLowerCase().includes(q);
+
+      const isLandingActive = activeLandingProductIds.includes(p.id);
+      const matchesVisibility = productVisibilityFilter === 'all' ||
+        (productVisibilityFilter === 'landing_active' && isLandingActive) ||
+        (productVisibilityFilter === 'landing_inactive' && !isLandingActive);
+
+      return matchesSearch && matchesVisibility;
     });
-  }, [products, productSearchQuery]);
+  }, [products, productSearchQuery, activeLandingProductIds, productVisibilityFilter]);
+
+  // Toggle individual product landing page visibility
+  const handleToggleLandingProduct = (productId: string) => {
+    setActiveLandingProductIds(prev => {
+      const exists = prev.includes(productId);
+      const updated = exists 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId];
+      localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(updated));
+      showToast(exists 
+        ? 'পণ্যটি ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে' 
+        : 'পণ্যটি ল্যান্ডিং পেজে সফলভাবে সক্রিয় করা হয়েছে!');
+      return updated;
+    });
+  };
+
+  // Bulk actions for storefront visibility
+  const handleSelectAllProducts = () => {
+    const allIds = products.map(p => p.id);
+    setActiveLandingProductIds(allIds);
+    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(allIds));
+    showToast(`সবগুলো (${allIds.length}টি) পণ্য ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!`);
+  };
+
+  const handleDeselectAllProducts = () => {
+    setActiveLandingProductIds([]);
+    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify([]));
+    showToast('সকল পণ্য ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে');
+  };
+
+  const handleSelectTop20 = () => {
+    const top20 = products.slice(0, 20).map(p => p.id);
+    setActiveLandingProductIds(top20);
+    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(top20));
+    showToast('প্রথম ২০টি মূল খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
+  };
+
+  const handleSelectTop10 = () => {
+    const top10 = products.slice(0, 10).map(p => p.id);
+    setActiveLandingProductIds(top10);
+    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(top10));
+    showToast('প্রথম ১০টি খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
+  };
 
   // Paginated Products
   const totalProductPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
@@ -503,8 +573,8 @@ export const ProviderApp: React.FC = () => {
                 <ShoppingBag className="w-4 h-4" />
                 <span>টয় প্রোডাক্টস</span>
               </div>
-              <span className="text-[11px] font-bold text-gray-400">
-                {products.length}
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/10 text-[#F4A261]">
+                {activeLandingProductIds.length}/{products.length} সক্রিয়
               </span>
             </button>
 
@@ -899,10 +969,10 @@ export const ProviderApp: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-xl font-black text-gray-900">
-                  খেলনা প্রোডাক্ট ক্যাটালগ
+                  খেলনা প্রোডাক্ট ক্যাটালগ ও ল্যান্ডিং পেজ সিলেকশন
                 </h3>
                 <p className="text-xs text-gray-500">
-                  এই প্রোডাক্টগুলো সরাসরি /growkins-toy-world ল্যান্ডিং পেজে শো করছে
+                  যেসব প্রোডাক্ট আপনি সক্রিয় করবেন, শুধুমাত্র সেই কয়টি প্রোডাক্টই সরাসরি /growkins-toy-world পেজে শো করবে
                 </p>
               </div>
 
@@ -917,22 +987,106 @@ export const ProviderApp: React.FC = () => {
               </div>
             </div>
 
-            {/* Product Search */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
-              <div className="relative w-full sm:w-80">
+            {/* Storefront Display Selection Control Panel */}
+            <div className="bg-gradient-to-r from-[#24221F] via-[#383530] to-[#24221F] text-white p-5 rounded-2xl shadow-md border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-[#F4A261]" />
+                  <h4 className="font-black text-sm text-white">
+                    ল্যান্ডিং পেজ ডিসপ্লে কন্ট্রোল
+                  </h4>
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-black text-xs animate-pulse">
+                    বর্তমানে ল্যান্ডিংয়ে সক্রিয়: {activeLandingProductIds.length}টি খেলনা
+                  </span>
+                </div>
+                <p className="text-xs text-gray-300">
+                  আপনি যে কয়টি পণ্য নির্বাচন করবেন (১০টি, ২০টি বা ৫০টি), ঠিক সেই কয়টি পণ্যই সরাসরি 
+                  <a href="/growkins-toy-world" target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#F4A261] ml-1">
+                    /growkins-toy-world
+                  </a> পেজে লাইভ থাকবে।
+                </p>
+              </div>
+
+              {/* Quick Bulk Selection Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectTop10}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer border border-white/10"
+                >
+                  প্রথম ১০টি বাছুন
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectTop20}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#F4A261] font-bold text-xs transition-colors cursor-pointer border border-white/10"
+                >
+                  প্রথম ২০টি বাছুন
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectAllProducts}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-sm"
+                >
+                  সব সক্রিয় ({products.length}টি)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeselectAllProducts}
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs transition-colors cursor-pointer border border-rose-500/30"
+                >
+                  সব বাদ দিন
+                </button>
+              </div>
+            </div>
+
+            {/* Visibility Filters & Search */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                <button
+                  onClick={() => { setProductVisibilityFilter('all'); setProductPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
+                    productVisibilityFilter === 'all'
+                      ? 'bg-[#24221F] text-white shadow-xs'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  সকল খেলনা ({products.length})
+                </button>
+                <button
+                  onClick={() => { setProductVisibilityFilter('landing_active'); setProductPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
+                    productVisibilityFilter === 'landing_active'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  ল্যান্ডিংয়ে সক্রিয় ({activeLandingProductIds.length})
+                </button>
+                <button
+                  onClick={() => { setProductVisibilityFilter('landing_inactive'); setProductPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
+                    productVisibilityFilter === 'landing_inactive'
+                      ? 'bg-gray-700 text-white shadow-xs'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  নিষ্ক্রিয় / লুকানো ({Math.max(0, products.length - activeLandingProductIds.length)})
+                </button>
+              </div>
+
+              {/* Product Search */}
+              <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={productSearchQuery}
                   onChange={(e) => { setProductSearchQuery(e.target.value); setProductPage(1); }}
                   placeholder="খেলনার নাম দিয়ে খুঁজুন..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51]"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white"
                 />
               </div>
-
-              <span className="text-xs text-gray-500 font-bold hidden sm:inline">
-                মোট {filteredProducts.length} টি খেলনা
-              </span>
             </div>
 
             {/* Products Grid */}
@@ -944,11 +1098,16 @@ export const ProviderApp: React.FC = () => {
                 const image = prod.featuredImage || prod.images?.main || (Array.isArray(prod.images) ? prod.images[0]?.url : '/items/busy-cube.jfif');
                 const price = Number(prod.price) || 0;
                 const originalPrice = Number(prod.originalPrice || prod.compareAtPrice) || Math.round(price * 1.35);
+                const isLandingActive = activeLandingProductIds.includes(prod.id);
 
                 return (
                   <div
                     key={prod.id}
-                    className="bg-white rounded-2xl border border-gray-200 shadow-xs hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
+                    className={`bg-white rounded-2xl border transition-all overflow-hidden flex flex-col justify-between ${
+                      isLandingActive
+                        ? 'border-emerald-300 shadow-sm ring-2 ring-emerald-500/10'
+                        : 'border-gray-200 opacity-70 hover:opacity-100'
+                    }`}
                   >
                     <div>
                       {/* Thumbnail */}
@@ -957,6 +1116,16 @@ export const ProviderApp: React.FC = () => {
                         <span className="absolute top-2 left-2 bg-[#24221F]/80 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
                           {customB?.ageBadge || prod.ageBadge || '১–৩ বছর'}
                         </span>
+                        
+                        {/* Live Landing Badge */}
+                        <span className={`absolute top-2 right-2 text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs ${
+                          isLandingActive 
+                            ? 'bg-emerald-600 text-white' 
+                            : 'bg-gray-700/80 text-gray-200'
+                        }`}>
+                          {isLandingActive ? '✓ ল্যান্ডিংয়ে সক্রিয়' : 'লুকানো'}
+                        </span>
+
                         {prod.videoUrl && (
                           <span className="absolute bottom-2 right-2 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                             <Video className="w-3 h-3" />
@@ -986,15 +1155,35 @@ export const ProviderApp: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="p-4 pt-0 border-t border-gray-100 flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                        সক্রিয় (Active)
-                      </span>
+                    {/* Actions & Landing Toggle */}
+                    <div className="p-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2 bg-gray-50/50">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLandingProduct(prod.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                          isLandingActive
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        }`}
+                        title={isLandingActive ? 'ল্যান্ডিং পেজ থেকে সরাতে ক্লিক করুন' : 'ল্যান্ডিং পেজে দেখাতে ক্লিক করুন'}
+                      >
+                        {isLandingActive ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>সক্রিয়</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-gray-500" />
+                            <span>লুকানো</span>
+                          </>
+                        )}
+                      </button>
+
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleOpenEditProduct(prod)}
-                          className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors cursor-pointer"
                           title="সম্পাদনা করুন"
                         >
                           <Edit className="w-3.5 h-3.5" />

@@ -84,29 +84,70 @@ export const GrowKinsToyWorldApp: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Fetch Products with Fallback to curated 20 toys from products.ts
+  // Fetch Products with Dynamic Provider Storefront Selection
   useEffect(() => {
     let isMounted = true;
     async function loadCatalog() {
       setLoadingProducts(true);
       try {
-        const res = await productService.list({ limit: 50, status: 'active' });
-        if (isMounted && res && Array.isArray(res.data) && res.data.length > 0) {
-          setProducts(res.data.slice(0, 20));
-        } else if (isMounted) {
-          setProducts(PRODUCTS.slice(0, 20));
+        const res = await productService.list({ limit: 100, status: 'active' });
+        const allCatalog = (res && Array.isArray(res.data) && res.data.length > 0)
+          ? res.data
+          : PRODUCTS;
+
+        // Read active landing product IDs set by Provider
+        let activeIds: string[] | null = null;
+        try {
+          const saved = localStorage.getItem('gk_active_toy_world_ids');
+          if (saved) activeIds = JSON.parse(saved);
+        } catch (e) {
+          console.warn('Error reading active toy ids', e);
+        }
+
+        let visibleProducts: any[];
+        if (activeIds && Array.isArray(activeIds)) {
+          // Exactly the products selected by the provider (10, 20, 80 or any count)
+          visibleProducts = allCatalog.filter(p => activeIds!.includes(p.id));
+        } else {
+          // Default initial selection: top 20 products
+          visibleProducts = allCatalog.slice(0, 20);
+        }
+
+        if (isMounted) {
+          setProducts(visibleProducts);
         }
       } catch (err) {
         console.warn('API product fetch fallback to local products:', err);
         if (isMounted) {
-          setProducts(PRODUCTS.slice(0, 20));
+          let activeIds: string[] | null = null;
+          try {
+            const saved = localStorage.getItem('gk_active_toy_world_ids');
+            if (saved) activeIds = JSON.parse(saved);
+          } catch (e) {}
+          const visible = (activeIds && Array.isArray(activeIds))
+            ? PRODUCTS.filter(p => activeIds!.includes(p.id))
+            : PRODUCTS.slice(0, 20);
+          setProducts(visible);
         }
       } finally {
         if (isMounted) setLoadingProducts(false);
       }
     }
+
     loadCatalog();
-    return () => { isMounted = false; };
+
+    // Listen for real-time changes across tabs (when provider toggles items in /provider)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'gk_active_toy_world_ids') {
+        loadCatalog();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => { 
+      isMounted = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Delivery Charges (Configurable)
@@ -395,8 +436,8 @@ export const GrowKinsToyWorldApp: React.FC = () => {
         {/* 20 Curated Products Catalog Section (Full-Width Grid) */}
         <section id="toy-catalog-section" className="py-12 sm:py-16 px-4 sm:px-8 w-full max-w-[1520px] mx-auto">
           <div className="text-center mb-10 sm:mb-14">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-xs font-black tracking-wider uppercase mb-2">
-              🌟 আমাদের হট কালেকশন
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#2D6A4F]/10 text-[#2D6A4F] text-xs font-black tracking-wider uppercase mb-2">
+              🌟 আমাদের হট কালেকশন ({products.length}টি খেলনা)
             </div>
             <h2 className="text-2xl sm:text-4xl font-black text-[#24221F]">
               পছন্দের খেলনা নির্বাচন করুন
@@ -410,6 +451,14 @@ export const GrowKinsToyWorldApp: React.FC = () => {
             <div className="p-16 rounded-3xl bg-white border border-[#E8E0D2] shadow-sm text-center">
               <RefreshCw className="w-10 h-10 animate-spin mx-auto text-[#E76F51] mb-3" />
               <p className="text-base font-bold text-gray-700">খেলনা ক্যাটালগ লোড হচ্ছে...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="p-16 rounded-3xl bg-white border border-[#E8E0D2] shadow-sm text-center space-y-3">
+              <ShoppingBag className="w-12 h-12 mx-auto text-gray-300" />
+              <h4 className="text-lg font-black text-gray-800">বর্তমানে কোনো খেলনা সক্রিয় করা নেই</h4>
+              <p className="text-xs text-gray-500 max-w-md mx-auto">
+                প্রোভাইডার পোর্টাল (<a href="/provider" target="_blank" className="text-[#E76F51] underline font-bold">/provider</a>) থেকে যেসব খেলনা সক্রিয় করা হবে, শুধুমাত্র সেই খেলনাগুলোই এখানে প্রদর্শিত হবে।
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 sm:gap-8">
