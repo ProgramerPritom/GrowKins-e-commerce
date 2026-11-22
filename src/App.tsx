@@ -32,6 +32,7 @@ import { AdminApp } from './components/admin/AdminApp';
 import { ClothingApp } from './components/clothing/ClothingApp';
 import { GrowKinsToyWorldApp } from './components/toy-world/GrowKinsToyWorldApp';
 import { ProviderApp } from './components/provider/ProviderApp';
+import { ToyStore3DApp } from './components/toy-store-3d/ToyStore3DApp';
 
 // Global history interceptor to ensure popstate is dispatched when pushState or replaceState is called
 if (typeof window !== 'undefined') {
@@ -248,6 +249,10 @@ export default function App() {
 
   if (currentPath.startsWith('/provider')) {
     return <ProviderApp />;
+  }
+
+  if (currentPath.startsWith('/3d-toy-store')) {
+    return <ToyStore3DApp />;
   }
 
   if (currentPath.startsWith('/growkins-toy-world') || currentPath.startsWith('/toy-world')) {
