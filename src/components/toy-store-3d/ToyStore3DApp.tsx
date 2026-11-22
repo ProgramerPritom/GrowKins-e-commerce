@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, Volume2, VolumeX, ArrowLeft, 
-  ChevronUp, ChevronDown, Compass, RefreshCw, CheckCircle2, Users 
+  ChevronUp, ChevronDown, Compass, RefreshCw, CheckCircle2, Users,
+  Play, Pause 
 } from 'lucide-react';
 import { productService } from '../../services';
 import { apiClient } from '../../lib/api/client';
@@ -22,7 +23,24 @@ export const ToyStore3DApp: React.FC = () => {
   // Walkthrough State (0.0 to 1.0 along the shop aisle)
   const [walkProgress, setWalkProgress] = useState<number>(0.05);
   const [isWalking, setIsWalking] = useState<boolean>(false);
+  const [isAutoWalking, setIsAutoWalking] = useState<boolean>(false);
   const walkTimeoutRef = useRef<any>(null);
+
+  // Auto-tour walker (smoothly strolls through store, pause on interaction)
+  useEffect(() => {
+    if (!isAutoWalking) return;
+    const interval = setInterval(() => {
+      setWalkProgress((prev) => {
+        if (prev >= 0.98) {
+          setIsAutoWalking(false);
+          return 0.98;
+        }
+        setIsWalking(true);
+        return Math.min(0.98, prev + 0.006);
+      });
+    }, 80);
+    return () => clearInterval(interval);
+  }, [isAutoWalking]);
 
   // Cart & Modal State
   const [cart, setCart] = useState<Record<string, CartItem>>({});
@@ -392,34 +410,54 @@ export const ToyStore3DApp: React.FC = () => {
         )}
       </div>
 
-      {/* ================= On-Screen Walking Navigation Controls ================= */}
-      <div className="absolute left-4 sm:left-8 bottom-4 sm:bottom-8 z-30 flex flex-col gap-2 pointer-events-auto">
+      {/* ================= On-Screen Walking Navigation Controls (Mobile & Desktop) ================= */}
+      <div className="absolute left-3 sm:left-8 bottom-3 sm:bottom-6 z-30 flex items-center gap-2 pointer-events-auto">
         <button
           type="button"
           onClick={stepForward}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/90 hover:bg-white text-[#24221F] shadow-2xl border-2 border-[#E76F51]/40 flex flex-col items-center justify-center font-black text-[10px] sm:text-xs transition-all active:scale-90 cursor-pointer"
+          className="h-10 sm:h-12 px-3 sm:px-4 rounded-2xl bg-white/95 hover:bg-white text-[#24221F] shadow-xl border border-[#E76F51]/40 flex items-center gap-1.5 font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer"
           title="সামনে এগিয়ে যান"
         >
-          <ChevronUp className="w-6 h-6 text-[#E76F51]" />
+          <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#E76F51]" />
           <span>সামনে</span>
         </button>
 
         <button
           type="button"
           onClick={stepBackward}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/90 hover:bg-white text-[#24221F] shadow-2xl border-2 border-[#E8E0D2] flex flex-col items-center justify-center font-black text-[10px] sm:text-xs transition-all active:scale-90 cursor-pointer"
+          className="h-10 sm:h-12 px-3 sm:px-4 rounded-2xl bg-white/95 hover:bg-white text-[#24221F] shadow-xl border border-[#E8E0D2] flex items-center gap-1.5 font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer"
           title="পেছনে আসুন"
         >
-          <ChevronDown className="w-6 h-6 text-gray-600" />
+          <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
           <span>পেছনে</span>
+        </button>
+
+        {/* Auto Tour Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = !isAutoWalking;
+            setIsAutoWalking(next);
+            showToast(next ? '▶️ অটো ট্যুর চালু হয়েছে' : '⏸️ অটো ট্যুর বন্ধ হয়েছে');
+          }}
+          className={`h-10 sm:h-12 px-3 sm:px-4 rounded-2xl shadow-xl flex items-center gap-1.5 font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer ${
+            isAutoWalking
+              ? 'bg-[#E76F51] text-white border-2 border-white animate-pulse'
+              : 'bg-white/95 hover:bg-white text-[#2D6A4F] border border-[#2D6A4F]/40'
+          }`}
+          title="স্বয়ংক্রিয়ভাবে পুরো স্টোরে হেঁটে বেড়ান"
+        >
+          {isAutoWalking ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+          <span>{isAutoWalking ? 'পজ' : 'অটো ট্যুর'}</span>
         </button>
       </div>
 
       {/* Floating Walkthrough Progress & Instructions Bar */}
-      <div className="absolute right-4 sm:right-8 bottom-4 sm:bottom-8 z-30 hidden sm:flex items-center gap-3 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-[#E8E0D2] text-xs font-bold text-gray-700 pointer-events-auto">
-        <Compass className="w-4 h-4 text-[#E76F51] animate-spin" style={{ animationDuration: '6s' }} />
-        <span>স্ক্রল বা তীরচিহ্নে হাঁটুন | যেকোনো খেলনায় ক্লিকে দেখুন</span>
-        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="absolute right-3 sm:right-8 bottom-3 sm:bottom-6 z-30 flex items-center gap-2.5 bg-white/95 backdrop-blur-md px-3.5 py-2 sm:py-2.5 rounded-2xl shadow-xl border border-[#E8E0D2] text-[11px] sm:text-xs font-bold text-gray-700 pointer-events-auto">
+        <Compass className="w-4 h-4 text-[#E76F51] animate-spin hidden sm:inline-block" style={{ animationDuration: '6s' }} />
+        <span className="hidden md:inline">সোয়াইপ বা বোতামে হাঁটুন | যেকোনো খেলনায় ক্লিকে দেখুন</span>
+        <span className="md:hidden">প্রগ্রেস</span>
+        <div className="w-16 sm:w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-[#E76F51] to-[#2D6A4F] transition-all duration-300"
             style={{ width: `${Math.round(walkProgress * 100)}%` }}

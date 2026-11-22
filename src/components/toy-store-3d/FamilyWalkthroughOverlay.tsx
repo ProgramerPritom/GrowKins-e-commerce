@@ -121,7 +121,7 @@ export const FamilyWalkthroughOverlay: React.FC<FamilyWalkthroughOverlayProps> =
               }
         }
         className="relative flex items-end justify-center select-none"
-        style={{ width: '480px', height: '280px', maxWidth: '98vw' }}
+        style={{ width: 'min(440px, 86vw)', height: 'min(260px, 50vw)' }}
       >
         <svg
           viewBox="0 0 480 320"
