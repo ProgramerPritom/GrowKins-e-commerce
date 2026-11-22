@@ -188,7 +188,7 @@ export const ProviderApp: React.FC = () => {
     setFormOriginalPrice(String(prod.originalPrice || prod.compareAtPrice || ''));
     setFormAgeBadge(customB?.ageBadge || prod.ageBadge || '১–৩ বছর');
     setFormImage(prod.featuredImage || prod.images?.main || (Array.isArray(prod.images) ? prod.images[0]?.url : ''));
-    setFormVideoUrl(prod.videoUrl || customB?.videoUrl || '');
+    setFormVideoUrl(prod.videoUrl || '');
     setFormFeatures(customB?.features || [
       'হাতের সূক্ষ্ম মোটর স্কিল ও একাগ্রতা বৃদ্ধি করে',
       '১০০% মসৃণ, নন-টক্সিক ও নিরাপদ কাঠের উপাদান',

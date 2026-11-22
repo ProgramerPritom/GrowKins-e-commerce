@@ -105,12 +105,15 @@ export const GrowKinsToyWorldApp: React.FC = () => {
         }
 
         let visibleProducts: any[];
-        if (activeIds && Array.isArray(activeIds)) {
+        if (activeIds && Array.isArray(activeIds) && activeIds.length > 0) {
           // Exactly the products selected by the provider (10, 20, 80 or any count)
           visibleProducts = allCatalog.filter(p => activeIds!.includes(p.id));
+          if (visibleProducts.length === 0) {
+            visibleProducts = allCatalog.slice(0, 10);
+          }
         } else {
-          // Default initial selection: top 20 products
-          visibleProducts = allCatalog.slice(0, 20);
+          // Default initial selection: top 10 products
+          visibleProducts = allCatalog.slice(0, 10);
         }
 
         if (isMounted) {
@@ -124,10 +127,10 @@ export const GrowKinsToyWorldApp: React.FC = () => {
             const saved = localStorage.getItem('gk_active_toy_world_ids');
             if (saved) activeIds = JSON.parse(saved);
           } catch (e) {}
-          const visible = (activeIds && Array.isArray(activeIds))
+          const visible = (activeIds && Array.isArray(activeIds) && activeIds.length > 0)
             ? PRODUCTS.filter(p => activeIds!.includes(p.id))
-            : PRODUCTS.slice(0, 20);
-          setProducts(visible);
+            : PRODUCTS.slice(0, 10);
+          setProducts(visible.length > 0 ? visible : PRODUCTS.slice(0, 10));
         }
       } finally {
         if (isMounted) setLoadingProducts(false);
@@ -489,7 +492,7 @@ export const GrowKinsToyWorldApp: React.FC = () => {
                       {/* Product Image & Badges */}
                       <div 
                         className="relative aspect-[4/3] bg-[#FAF7F1] overflow-hidden group cursor-pointer"
-                        onClick={() => setSelectedProductForModal(prod)}
+                        onClick={() => setSelectedProductForModal({ product: prod, initialTab: 'gallery' })}
                       >
                         <img
                           src={image}
@@ -515,7 +518,7 @@ export const GrowKinsToyWorldApp: React.FC = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedProductForModal(prod);
+                            setSelectedProductForModal({ product: prod, initialTab: 'video' });
                           }}
                           className="absolute bottom-3 right-3 flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/95 hover:bg-white text-gray-900 text-xs font-black shadow-lg backdrop-blur-md transition-all cursor-pointer hover:scale-105 border border-gray-100"
                         >
@@ -1030,7 +1033,8 @@ export const GrowKinsToyWorldApp: React.FC = () => {
       {/* Rich Interactive Product Demonstration & Feature Detail Modal */}
       {selectedProductForModal && (
         <ToyProductDetailModal
-          product={selectedProductForModal}
+          product={selectedProductForModal.product || selectedProductForModal}
+          initialTab={selectedProductForModal.initialTab || 'gallery'}
           onClose={() => setSelectedProductForModal(null)}
           onAddToCart={handleAddItem}
           onScrollToCheckout={handleScrollToCheckout}

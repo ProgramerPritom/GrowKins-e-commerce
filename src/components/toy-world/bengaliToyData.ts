@@ -22,7 +22,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'মন্টেসরি সেন্সরি বিজি কিউব হলো ১ থেকে ৩ বছর বয়সী শিশুদের জন্য একটি অসাধারণ শিক্ষণীয় খেলনা। বাস্তব জীবনের উপাদান যেমন তালা-চাবি, সুইচ, গিয়ার এবং স্পিনিং হুইল দিয়ে তৈরি এই কিউবটি শিশুদের কৌতুহল বাড়িয়ে তোলে এবং ঘণ্টার পর ঘণ্টা স্ক্রিন ছাড়াই শান্তভাবে খেলার আনন্দ দেয়। এটি শিশুর হাত ও চোখের সমন্বয় এবং বুদ্ধিমত্তা বিকাশে অত্যন্ত কার্যকর।',
     materials: '১০০% মসৃণ বিচউড কাঠ, বিপিএ-ফ্রি ফুড-গ্রেড প্লাস্টিক ও মসৃণ মেটাল পার্টস।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'busy-zipper-bag-montessori': {
     bName: 'মন্টেসরি সেন্সরি বিজি ব্যাগ (ট্রাভেল প্যাক)',
@@ -36,7 +36,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'এই বিজি ব্যাগটি নরম কাপড়ে তৈরি একটি পোর্টেবল লার্নিং বোর্ড। এতে রয়েছে বোতাম লাগানো, চেইন টানা, বেল্ট আটকানো এবং জুতার ফিতা বাঁধার মতো প্র্যাকটিক্যাল লাইফ স্কিলস। এর প্রতিটি পার্ট শিশুর আঙুলের নমনীয়তা বাড়ায় এবং শিশুর স্বাবলম্বী হওয়ার প্রথম ধাপ তৈরি করে।',
     materials: 'নরম প্রিমিয়াম উল-ফেল্ট কাপড়, কোনো ধারালো প্রান্ত নেই, সম্পূর্ণ নিরাপদ।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'finger-number-count-toy': {
     bName: 'ফিঙ্গার নাম্বার কাউন্টিং বোর্ড (১-১০ গণনা)',
@@ -50,7 +50,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'ফিঙ্গার নাম্বার কাউন্টিং বোর্ড শিশুদের গণিত শেখার সবচেয়ে সহজ ও কার্যকর পদ্ধতি। বাচ্চারা এখানে আঙুল ভাঁজ করে করে সংখ্যা গণনা শেখে। ফলে সংখ্যা শুধু মুখের বুলি না হয়ে তাদের মনের ভেতর একটি পরিষ্কার ছবি তৈরি করে।',
     materials: 'মজবুত ও নন-টক্সিক সফট ফেল্ট ম্যাটেরিয়াল, সহজে ধোয়া যায়।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'woodland-balance-friends': {
     bName: 'উডল্যান্ড ব্যালেন্স ফ্রেন্ডস (ভারসাম্যের খেলা)',
@@ -64,7 +64,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'বিভিন্ন প্রাণীর আকারের রঙিন কাঠের ব্লকগুলো একটির উপর আরেকটি রেখে ব্যালেন্স করার এই খেলাটি শিশুদের অসীম আনন্দ দেয়। এটি খেলার মাধ্যমে শিশু বুঝতে পারে কীভাবে ভারসাম্য বজায় রাখতে হয় এবং ধৈর্য ধারণ করতে হয়।',
     materials: 'প্রাকৃতিক বিচউড কাঠ, ওয়াটার-বেসড চাইল্ড-সেফ কালার।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'sunrise-stacking-arch': {
     bName: 'সানরাইজ স্ট্যাকিং আর্চ (রেইনবো উডেন আর্চ)',
@@ -78,7 +78,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'সানরাইজ স্ট্যাকিং আর্চ হলো একটি ওপেন-এন্ডেড মন্টেসরি খেলনা। এর কোনো বাঁধাধরা নিয়ম নেই। শিশু এটিকে ব্রিজ বানাতে পারে, টানেল বানাতে পারে কিংবা বিভিন্ন প্যাটার্নে সাজাতে পারে। এটি শিশুর কল্পনাশক্তি বিকাশের শ্রেষ্ঠ উপহার।',
     materials: 'ন্যাচারাল সলিড উড ও ইকোলজিক্যাল কালার ডাই।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'little-architect-blocks': {
     bName: 'লিটল আর্কিটেক্ট উডেন বিল্ডিং ব্লকস',
@@ -92,7 +92,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'বিল্ডিং ব্লকস শিশুর ত্রিমাত্রিক চিন্তা ক্ষমতা বাড়িয়ে তোলে। নিজের হাতে টাওয়ার, ক্যাসেল বা বাড়ি তৈরি করার আনন্দ শিশুর আত্মবিশ্বাস বৃদ্ধি করে এবং স্থাপত্যিক চিন্তার জন্ম দেয়।',
     materials: 'এফএসসি সার্টিফাইড ন্যাচারাল পাইনউড কাঠ।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'make-believe-camera': {
     bName: 'মেইক বিলিভ কাঠের কিডস ক্যামেরা',
@@ -106,7 +106,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'বাচ্চারা বড়দের মতো ছবি তুলতে খুব ভালোবাসে। এই কাঠের ক্যামেরাটির লেন্স দিয়ে তাকালে ক্যালিডোস্কোপিক ভিউ দেখা যায়, যা তাদের মুগ্ধ করে। এতে ক্লিকযোগ্য বাটন রয়েছে যা বাস্তব ক্যামেরার অনুভূতি দেয়।',
     materials: 'স্মুথ ও নিরাপদ বিচউড কাঠ ও অপটিক্যাল অ্যাক্রিলিক লেন্স।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'pocket-forest-friends': {
     bName: 'পকেট ফরেস্ট ফ্রেন্ডস (কাঠের বনচর প্রাণী সেট)',
@@ -120,7 +120,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'এই কাঠের প্রাণীগুলো দিয়ে বাচ্চারা নিজের মতো গল্প তৈরি করতে পারে। বাবা-মা ও শিশুর মধ্যে ইন্টারঅ্যাকশন বাড়াতে এবং সুন্দর গল্পের মাধ্যমে নতুন শব্দ শেখাতে এই খেলনাটি তুলনাহীন।',
     materials: '১০০% প্রাকৃতিক কাঠ, নন-টক্সিক ওয়াটার কালার।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'first-beeswax-crayons': {
     bName: 'ফার্স্ট বিসওয়াক্স ক্রায়নস (মৌমাছির মোমের রঙ)',
@@ -134,7 +134,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'ছোট শিশুরা প্রায়ই রঙপেন্সিল মুখে দেয়। তাই আমাদের এই ক্রায়নগুলো তৈরি খাঁটি প্রাকৃতিক মৌমাছির মোম ও ভোজ্য উপাদান দিয়ে। এটি শিশুদের নিরাপদ চিত্রাঙ্কন ও রঙের দুনিয়ায় পরিচয় করিয়ে দেওয়ার সবচেয়ে বিশ্বস্ত সঙ্গী।',
     materials: '১০০% খাঁটি বিসওয়াক্স এবং প্রাকৃতিক উদ্ভিজ্জ রঙ।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'sensory-rattle-trio': {
     bName: 'সেন্সরি উডেন র্যাটল ট্রিও (কাঠের মিষ্টি ঝুনঝুনি)',
@@ -148,7 +148,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'প্লাস্টিকের কর্কশ শব্দের ঝুনঝুনির বদলে কাঠের এই র্যাটলগুলো মৃদু ও শান্ত শব্দ তৈরি করে। এটি শিশুর শ্রবণ ইন্দ্রিয়কে উত্তেজিত না করে প্রশান্তি দেয় এবং হাতের গ্রিপিং ক্ষমতা উন্নত করে।',
     materials: 'আনপেইন্টেড অর্গানিক বিচউড ও ন্যাচারাল কটন কর্ড।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'wobble-balance-board': {
     bName: 'উওবল ব্যালেন্স বোর্ড (শারীরিক কসরতের খেলনা)',
@@ -162,7 +162,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'ব্যালেন্স বোর্ড শিশুদের শারীরিক সুস্থতা ও ব্যালেন্সিং ক্ষমতার জন্য ডাক্তার ও থেরাপিস্টদের অন্যতম পছন্দ। এটি দিয়ে শিশুরা ঘরে বসেই দারুণ কসরত করতে পারে এবং অতিরিক্ত শক্তিকে ইতিবাচক খেলায় রূপ দেয়।',
     materials: 'মাল্টি-লেয়ার ইউরোপিয়ান বিচউড প্লাইউড ও মসৃণ ফিনিশ।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   '10-in-1-polygon-busy-cube': {
     bName: '১০-ইন-১ পলিগন বিজি কিউব (লার্নিং মাস্টার)',
@@ -176,7 +176,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'এই কিউবটিতে সাধারণ কিউবের চেয়েও বেশি অ্যাক্টিভিটি রয়েছে। এতে প্লাগ ইন-আউট, সুইচ এবং রোটেশনের মতো মজার মেকানিজম রয়েছে যা শিশুদের বুদ্ধির স্তরকে দ্রুত উন্নত করে।',
     materials: 'উচ্চমানের অ্যালয় মেটাল পার্টস এবং মসৃণ কাঠ।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'gyan-box-set-16-books': {
     bName: 'জ্ঞান বক্স ১৬টি প্রিমিয়াম বোর্ড বুক সেট',
@@ -190,7 +190,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'জ্ঞান বক্সের ১৬টি বই আপনার সন্তানের প্রাথমিক শিক্ষার সম্পূর্ণ প্যাকেজ। বইয়ের পাতাগুলো এতোটাই শক্ত যে বাচ্চারা ছিঁড়তে পারবে না। প্রতিদিন ১০ মিনিট এই বইগুলো দেখালে বাচ্চার ভাষা দ্রুত বিকশিত হয়।',
     materials: 'লেমিনেশন করা নন-টিয়ারেবল হার্ডবোর্ড পেপার।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   '7-in-1-busy-cube': {
     bName: '৭-ইন-১ মন্টেসরি অ্যাক্টিভিটি কিউব',
@@ -204,7 +204,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: '৭-ইন-১ বিজি কিউব শিশুদের মনোযোগ ধরে রাখার দারুণ এক আবিষ্কার। এটি বাচ্চার আঙুলের পেশি নিয়ন্ত্রণ করতে সাহায্য করে এবং বাস্তব জীবনের মেকানিজম বুঝতে শেখায়।',
     materials: 'চাইল্ড-সেফ এবিএস ও মসৃণ কাঠ।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'intelligent-book-mega-combo': {
     bName: 'ইন্টেলিজেন্ট লার্নিং বুক মেগা কম্বো',
@@ -218,7 +218,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'বইয়ে আঙুল রাখলেই সঠিক উচ্চারণে কথা বলে ওঠে এই ইন্টেলিজেন্ট বুক! এটি শিশুদের পড়ার প্রতি ভালোবাসা তৈরি করে এবং একা একাই উচ্চারণ শিখে নেওয়ার সুযোগ দেয়।',
     materials: 'ইলেকট্রনিক স্পিকার বোর্ড এবং ওয়াটারপ্রুফ পেপার।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   },
   'flash-card-writing-tablet-combo': {
     bName: 'টকিং ফ্ল্যাশ কার্ড ও এলসিডি রাইটিং ট্যাবলেট কম্বো',
@@ -232,7 +232,7 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
     ],
     description: 'এই কম্বোটি বর্তমানে অভিভাবকদের সবচেয়ে পছন্দের উপহার। কার্ড রিডার দিয়ে শিশু উচ্চারণ শেখে আর ডিজিটাল স্লেটে লেখা ও আঁকার অনুশীলন করে। কাগজ-কলমের অপচয় ও দেওয়াল নষ্ট হওয়া থেকে রক্ষা পাওয়ার সেরা উপায়।',
     materials: 'চাইল্ড-ফ্রেন্ডলি এবিএস বডি ও আই-প্রোটেকশন এলসিডি স্ক্রিন।',
-    videoUrl: 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    videoUrl: ''
   }
 };
 
@@ -240,24 +240,33 @@ export const BENGALI_TOY_MAP: Record<string, BengaliToyMeta> = {
 export function getBengaliProductDetails(prod: any): BengaliToyMeta {
   const pId = prod?.id || '';
   if (BENGALI_TOY_MAP[pId]) {
-    return BENGALI_TOY_MAP[pId];
+    const meta = BENGALI_TOY_MAP[pId];
+    return {
+      ...meta,
+      bName: prod?.name && prod.name !== 'শিক্ষণীয় খেলনা' ? prod.name : meta.bName,
+      bSubtitle: prod?.subtitle || meta.bSubtitle,
+      ageBadge: prod?.ageBadge || meta.ageBadge,
+      videoUrl: prod?.videoUrl || meta.videoUrl
+    };
   }
 
   // Generate engaging Bengali details if not in custom map
   const rawName = prod?.name || 'শিক্ষণীয় খেলনা';
 
   return {
-    bName: prod?.subtitle?.includes('বাংলা') ? prod.name : `${rawName} — শিক্ষণীয় খেলনা`,
-    bSubtitle: 'বাচ্চাদের মানসিক ও শারীরিক বিকাশের ১০০% নিরাপদ খেলনা',
+    bName: (prod?.subtitle?.includes('বাংলা') || prod?.name?.includes('—')) ? prod.name : `${rawName} — শিক্ষণীয় খেলনা`,
+    bSubtitle: prod?.subtitle || 'বাচ্চাদের মানসিক ও শারীরিক বিকাশের ১০০% নিরাপদ খেলনা',
     ageBadge: prod?.ageBadge || '১–৫ বছর',
-    features: [
-      'শিশুর ব্রেন ডেভেলপমেন্ট ও একাগ্রতা বৃদ্ধি করে',
-      '১০০% মসৃণ, নন-টক্সিক ও সম্পূর্ণ শিশু-বান্ধব উপাদান',
-      'স্ক্রিন-টাইম কমিয়ে শান্ত ও সৃজনশীল খেলায় উৎসাহিত করে',
-      'হাত ও চোখের সূক্ষ্ম সমন্বয় (Hand-Eye Coordination) বাড়ায়'
-    ],
-    description: `${rawName} হলো শিশুদের জন্য একটি চমৎকার শিক্ষণীয় খেলনা। এটি শিশুদের খেলার ছলে নতুন নতুন দক্ষতা শেখায় এবং মনোযোগ ধরে রাখতে সহায়তা করে। শিশু-বান্ধব উপকরণ দিয়ে তৈরি হওয়ায় এটি সম্পূর্ণ নিরাপদ ও দীর্ঘস্থায়ী।`,
-    materials: '১০০% মসৃণ পরিবেশবান্ধব কাঠ বা খাদ্য-নিরাপদ উপাদান।',
-    videoUrl: prod?.videoUrl || 'https://www.youtube.com/watch?v=FjU_x18E67E'
+    features: (prod?.benefits && Array.isArray(prod.benefits) && prod.benefits.length > 0)
+      ? prod.benefits
+      : [
+        'শিশুর ব্রেন ডেভেলপমেন্ট ও একাগ্রতা বৃদ্ধি করে',
+        '১০০% মসৃণ, নন-টক্সিক ও সম্পূর্ণ শিশু-বান্ধব উপাদান',
+        'স্ক্রিন-টাইম কমিয়ে শান্ত ও সৃজনশীল খেলায় উৎসাহিত করে',
+        'হাত ও চোখের সূক্ষ্ম সমন্বয় (Hand-Eye Coordination) বাড়ায়'
+      ],
+    description: prod?.description || `${rawName} হলো শিশুদের জন্য একটি চমৎকার শিক্ষণীয় খেলনা। এটি শিশুদের খেলার ছলে নতুন নতুন দক্ষতা শেখায় এবং মনোযোগ ধরে রাখতে সহায়তা করে। শিশু-বান্ধব উপকরণ দিয়ে তৈরি হওয়ায় এটি সম্পূর্ণ নিরাপদ ও দীর্ঘস্থায়ী।`,
+    materials: prod?.materials ? (Array.isArray(prod.materials) ? prod.materials.join(', ') : prod.materials) : '১০০% মসৃণ পরিবেশবান্ধব কাঠ বা খাদ্য-নিরাপদ উপাদান।',
+    videoUrl: prod?.videoUrl || ''
   };
 }

@@ -11,15 +11,17 @@ interface ToyProductDetailModalProps {
   onClose: () => void;
   onAddToCart: (product: any, qty: number) => void;
   onScrollToCheckout: () => void;
+  initialTab?: 'video' | 'gallery';
 }
 
 export const ToyProductDetailModal: React.FC<ToyProductDetailModalProps> = ({
   product,
   onClose,
   onAddToCart,
-  onScrollToCheckout
+  onScrollToCheckout,
+  initialTab = 'gallery'
 }) => {
-  const [activeMediaTab, setActiveMediaTab] = useState<'video' | 'gallery'>('gallery');
+  const [activeMediaTab, setActiveMediaTab] = useState<'video' | 'gallery'>(initialTab);
   const [currentSlideIdx, setCurrentSlideIdx] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -50,35 +52,27 @@ export const ToyProductDetailModal: React.FC<ToyProductDetailModalProps> = ({
   // Extract from images array
   if (Array.isArray(product.images)) {
     product.images.forEach((img: any) => {
-      const url = typeof img === 'string' ? img : img.url;
-      if (url && !galleryImages.includes(url)) galleryImages.push(url);
+      const url = typeof img === 'string' ? img : img?.url;
+      if (url && typeof url === 'string' && !galleryImages.includes(url)) {
+        galleryImages.push(url);
+      }
     });
   } else if (product.images?.gallery && Array.isArray(product.images.gallery)) {
     product.images.gallery.forEach((url: string) => {
-      if (url && !galleryImages.includes(url)) galleryImages.push(url);
+      if (url && typeof url === 'string' && !galleryImages.includes(url)) {
+        galleryImages.push(url);
+      }
     });
-  }
-
-  // If fewer than 4 angles exist, enrich with authentic Montessori toy detail scenes
-  const fallbackComplementaryAngles = [
-    'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1200&q=80'
-  ];
-  for (const fallbackImg of fallbackComplementaryAngles) {
-    if (galleryImages.length >= 4) break;
-    if (!galleryImages.includes(fallbackImg)) {
-      galleryImages.push(fallbackImg);
-    }
   }
 
   // Carousel navigation handlers
   const handlePrevSlide = useCallback(() => {
+    if (galleryImages.length <= 1) return;
     setCurrentSlideIdx((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   }, [galleryImages.length]);
 
   const handleNextSlide = useCallback(() => {
+    if (galleryImages.length <= 1) return;
     setCurrentSlideIdx((prev) => (prev + 1) % galleryImages.length);
   }, [galleryImages.length]);
 
@@ -112,16 +106,25 @@ export const ToyProductDetailModal: React.FC<ToyProductDetailModalProps> = ({
   };
 
   // YouTube Embed Parser with clean ID extraction
-  const getYouTubeId = (url?: string) => {
-    const targetUrl = url || bData.videoUrl || 'https://www.youtube.com/watch?v=FjU_x18E67E';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+  const getYouTubeId = (url?: string): string | null => {
+    if (!url || typeof url !== 'string' || !url.trim()) return null;
+    const targetUrl = url.trim();
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/|live\/)([^#&?]*).*/;
     const match = targetUrl.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : 'FjU_x18E67E';
+    if (match && match[2] && match[2].length === 11) {
+      return match[2];
+    }
+    // Direct 11-char ID
+    if (targetUrl.length === 11 && !targetUrl.includes('/') && !targetUrl.includes('.') && !targetUrl.includes('?')) {
+      return targetUrl;
+    }
+    return null;
   };
 
-  const videoId = getYouTubeId(product.videoUrl || bData.videoUrl);
-  const videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?rel=0`;
-  const rawVideoLink = product.videoUrl || bData.videoUrl || `https://www.youtube.com/watch?v=${videoId}`;
+  const rawUrl = (product.videoUrl && String(product.videoUrl).trim()) || (bData.videoUrl && String(bData.videoUrl).trim()) || '';
+  const videoId = getYouTubeId(rawUrl);
+  const videoEmbedUrl = videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : '';
+  const rawVideoLink = rawUrl.startsWith('http') ? rawUrl : (videoId ? `https://www.youtube.com/watch?v=${videoId}` : '');
 
   const handleOrderNow = () => {
     onAddToCart(product, quantity);
@@ -218,30 +221,54 @@ export const ToyProductDetailModal: React.FC<ToyProductDetailModalProps> = ({
                 onTouchEnd={handleTouchEnd}
               >
                 {activeMediaTab === 'video' ? (
-                  /* YouTube Video Player Embed */
-                  <div className="relative w-full h-full bg-black flex flex-col justify-between">
-                    <iframe
-                      src={videoEmbedUrl}
-                      title={bData.bName}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                      className="w-full h-full border-0"
-                    />
-                    {/* External Link Fallback Bar */}
-                    <div className="absolute bottom-2 right-2 z-10">
-                      <a
-                        href={rawVideoLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black text-white text-[11px] font-bold flex items-center gap-1.5 shadow-md backdrop-blur-sm transition-all"
-                      >
-                        <Video className="w-3.5 h-3.5 text-rose-400" />
-                        <span>ইউটিউবে সরাসরি দেখুন</span>
-                        <ExternalLink className="w-3 h-3 text-gray-400" />
-                      </a>
+                  /* YouTube Video Player Embed or Empty Notice */
+                  videoId ? (
+                    <div className="relative w-full h-full bg-black flex flex-col justify-between">
+                      <iframe
+                        src={videoEmbedUrl}
+                        title={bData.bName}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                      {/* External Link Fallback Bar */}
+                      {rawVideoLink && (
+                        <div className="absolute bottom-2 right-2 z-10">
+                          <a
+                            href={rawVideoLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black text-white text-[11px] font-bold flex items-center gap-1.5 shadow-md backdrop-blur-sm transition-all"
+                          >
+                            <Video className="w-3.5 h-3.5 text-rose-400" />
+                            <span>ইউটিউবে সরাসরি দেখুন</span>
+                            <ExternalLink className="w-3 h-3 text-gray-400" />
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="relative w-full h-full bg-[#1A1816] flex flex-col items-center justify-center p-6 text-center text-white">
+                      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-3">
+                        <Video className="w-7 h-7" />
+                      </div>
+                      <h4 className="text-base font-black text-white mb-1.5">
+                        ভিডিও ডেমো এখনও যুক্ত করা হয়নি
+                      </h4>
+                      <p className="text-xs text-gray-400 max-w-sm mb-4 leading-relaxed">
+                        প্রোভাইডার পোর্টাল (<span className="text-[#E76F51]">/provider</span>) থেকে পণ্যটি এডিট করে ইউটিউব ভিডিও লিংক দিলে এখানে সরাসরি ভিডিও ডেমো চলবে।
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMediaTab('gallery')}
+                        className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 border border-white/10 cursor-pointer"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        <span>পণ্যের ছবিসমূহ দেখুন ({galleryImages.length})</span>
+                      </button>
+                    </div>
+                  )
                 ) : (
                   /* Image Carousel Viewport */
                   <div className="relative w-full h-full bg-gray-50 flex items-center justify-center">
