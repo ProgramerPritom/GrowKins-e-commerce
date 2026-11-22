@@ -7,6 +7,7 @@ import {
   ShoppingBag, ChevronLeft, Save, Sparkles
 } from 'lucide-react';
 import { orderService, productService } from '../../services';
+import { apiClient } from '../../lib/api/client';
 import type { AdminOrder, OrderStatus } from '../../types/admin';
 import { MediaPicker } from '../admin/common/MediaPicker';
 import { PRODUCTS } from '../../data/products';
@@ -52,9 +53,38 @@ export const ProviderApp: React.FC = () => {
     } catch (e) {
       console.warn('Failed to parse saved active toy ids', e);
     }
-    return PRODUCTS.slice(0, 20).map(p => p.id);
+    return [];
   });
   const [productVisibilityFilter, setProductVisibilityFilter] = useState<'all' | 'landing_active' | 'landing_inactive'>('all');
+
+  // Load Server-Synced Active Landing Product IDs from Google Sheets Database
+  useEffect(() => {
+    let isMounted = true;
+    async function loadServerLandingIds() {
+      try {
+        const res = await apiClient.get<any>('/settings/landing_products');
+        if (isMounted && res?.data?.activeIds && Array.isArray(res.data.activeIds)) {
+          setActiveLandingProductIds(res.data.activeIds);
+          localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(res.data.activeIds));
+        }
+      } catch (err) {
+        console.warn('Could not fetch server landing products, using local cache:', err);
+      }
+    }
+    loadServerLandingIds();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Sync active landing IDs with both local storage and Google Sheets backend
+  const syncActiveLandingIds = async (newIds: string[]) => {
+    setActiveLandingProductIds(newIds);
+    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(newIds));
+    try {
+      await apiClient.patch('/settings/landing_products', { activeIds: newIds });
+    } catch (err) {
+      console.warn('Failed to persist landing products to server:', err);
+    }
+  };
 
   // Product Form State
   const [formName, setFormName] = useState<string>('');
@@ -253,13 +283,10 @@ export const ProviderApp: React.FC = () => {
         showToast('খেলনা পণ্যটি সফলভাবে আপডেট হয়েছে!');
       } else {
         const created = await productService.create(payload);
-        const newId = (created as any)?.data?.id || `toy_${Date.now()}`;
-        if (formStatus === 'active') {
-          setActiveLandingProductIds(prev => {
-            const updated = [...prev, newId];
-            localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(updated));
-            return updated;
-          });
+        const newId = (created as any)?.data?.id;
+        if (newId && formStatus === 'active') {
+          const updated = [...activeLandingProductIds, newId];
+          await syncActiveLandingIds(updated);
         }
         showToast('নতুন খেলনা সফলভাবে যুক্ত হয়েছে এবং ল্যান্ডিং পেজে দৃশ্যমান হবে!');
       }
@@ -331,45 +358,38 @@ export const ProviderApp: React.FC = () => {
   }, [products, productSearchQuery, activeLandingProductIds, productVisibilityFilter]);
 
   // Toggle individual product landing page visibility
-  const handleToggleLandingProduct = (productId: string) => {
-    setActiveLandingProductIds(prev => {
-      const exists = prev.includes(productId);
-      const updated = exists 
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId];
-      localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(updated));
-      showToast(exists 
-        ? 'পণ্যটি ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে' 
-        : 'পণ্যটি ল্যান্ডিং পেজে সফলভাবে সক্রিয় করা হয়েছে!');
-      return updated;
-    });
+  const handleToggleLandingProduct = async (productId: string) => {
+    const exists = activeLandingProductIds.includes(productId);
+    const updated = exists 
+      ? activeLandingProductIds.filter(id => id !== productId)
+      : [...activeLandingProductIds, productId];
+    await syncActiveLandingIds(updated);
+    showToast(exists 
+      ? 'পণ্যটি ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে' 
+      : 'পণ্যটি ল্যান্ডিং পেজে সফলভাবে সক্রিয় করা হয়েছে!');
   };
 
   // Bulk actions for storefront visibility
-  const handleSelectAllProducts = () => {
+  const handleSelectAllProducts = async () => {
     const allIds = products.map(p => p.id);
-    setActiveLandingProductIds(allIds);
-    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(allIds));
+    await syncActiveLandingIds(allIds);
     showToast(`সবগুলো (${allIds.length}টি) পণ্য ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!`);
   };
 
-  const handleDeselectAllProducts = () => {
-    setActiveLandingProductIds([]);
-    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify([]));
+  const handleDeselectAllProducts = async () => {
+    await syncActiveLandingIds([]);
     showToast('সকল পণ্য ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে');
   };
 
-  const handleSelectTop20 = () => {
+  const handleSelectTop20 = async () => {
     const top20 = products.slice(0, 20).map(p => p.id);
-    setActiveLandingProductIds(top20);
-    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(top20));
+    await syncActiveLandingIds(top20);
     showToast('প্রথম ২০টি মূল খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
   };
 
-  const handleSelectTop10 = () => {
+  const handleSelectTop10 = async () => {
     const top10 = products.slice(0, 10).map(p => p.id);
-    setActiveLandingProductIds(top10);
-    localStorage.setItem('gk_active_toy_world_ids', JSON.stringify(top10));
+    await syncActiveLandingIds(top10);
     showToast('প্রথম ১০টি খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
   };
 

@@ -6,6 +6,7 @@ import {
   Clock, Award, Copy
 } from 'lucide-react';
 import { productService, orderService } from '../../services';
+import { apiClient } from '../../lib/api/client';
 import { PRODUCTS } from '../../data/products';
 import type { AdminOrder } from '../../types/admin';
 import { GeminiToyChatbot } from './GeminiToyChatbot';
@@ -84,36 +85,46 @@ export const GrowKinsToyWorldApp: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Fetch Products with Dynamic Provider Storefront Selection
+  // Fetch Products with Dynamic Provider Storefront Selection (Synced via Google Sheets Database)
   useEffect(() => {
     let isMounted = true;
     async function loadCatalog() {
       setLoadingProducts(true);
       try {
-        const res = await productService.list({ limit: 100, status: 'active' });
-        const allCatalog = (res && Array.isArray(res.data) && res.data.length > 0)
-          ? res.data
+        const [res, settingsRes] = await Promise.allSettled([
+          productService.list({ limit: 100, status: 'active' }),
+          apiClient.get<any>('/settings/landing_products')
+        ]);
+
+        const allCatalog = (res.status === 'fulfilled' && res.value && Array.isArray(res.value.data) && res.value.data.length > 0)
+          ? res.value.data
           : PRODUCTS;
 
-        // Read active landing product IDs set by Provider
-        let activeIds: string[] | null = null;
+        let serverActiveIds: string[] | null = null;
+        if (settingsRes.status === 'fulfilled' && settingsRes.value?.data?.activeIds && Array.isArray(settingsRes.value.data.activeIds)) {
+          serverActiveIds = settingsRes.value.data.activeIds;
+        }
+
+        let localActiveIds: string[] | null = null;
         try {
           const saved = localStorage.getItem('gk_active_toy_world_ids');
-          if (saved) activeIds = JSON.parse(saved);
+          if (saved) localActiveIds = JSON.parse(saved);
         } catch (e) {
-          console.warn('Error reading active toy ids', e);
+          console.warn('Error reading active toy ids from storage', e);
         }
+
+        const activeIds = serverActiveIds || localActiveIds;
 
         let visibleProducts: any[];
         if (activeIds && Array.isArray(activeIds) && activeIds.length > 0) {
-          // Exactly the products selected by the provider (10, 20, 80 or any count)
-          visibleProducts = allCatalog.filter(p => activeIds!.includes(p.id));
+          // Exactly the products selected by the provider (5, 12, 25, 43 or any count)
+          visibleProducts = allCatalog.filter(p => activeIds.includes(p.id));
           if (visibleProducts.length === 0) {
-            visibleProducts = allCatalog.slice(0, 10);
+            visibleProducts = allCatalog;
           }
         } else {
-          // Default initial selection: top 10 products
-          visibleProducts = allCatalog.slice(0, 10);
+          // If no restriction set, show all available products
+          visibleProducts = allCatalog;
         }
 
         if (isMounted) {
@@ -129,8 +140,8 @@ export const GrowKinsToyWorldApp: React.FC = () => {
           } catch (e) {}
           const visible = (activeIds && Array.isArray(activeIds) && activeIds.length > 0)
             ? PRODUCTS.filter(p => activeIds!.includes(p.id))
-            : PRODUCTS.slice(0, 10);
-          setProducts(visible.length > 0 ? visible : PRODUCTS.slice(0, 10));
+            : PRODUCTS;
+          setProducts(visible.length > 0 ? visible : PRODUCTS);
         }
       } finally {
         if (isMounted) setLoadingProducts(false);
