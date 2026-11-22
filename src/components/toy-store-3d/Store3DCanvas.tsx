@@ -208,8 +208,8 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     const container = mountRef.current;
     if (!container) return;
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const width = container.clientWidth || window.innerWidth || 800;
+    const height = container.clientHeight || window.innerHeight || 600;
 
     // 1. Scene
     const scene = new THREE.Scene();
