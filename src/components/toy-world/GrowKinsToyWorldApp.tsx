@@ -370,11 +370,19 @@ export const GrowKinsToyWorldApp: React.FC = () => {
             </div>
           </div>
 
-          {/* Hotline & Scroll to Checkout */}
-          <div className="flex items-center gap-2.5 sm:gap-4">
+          {/* Hotline, 3D Store & Scroll to Checkout */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href="/3d-toy-store"
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black shadow-md hover:shadow-lg transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>৩ডি ভার্চুয়াল স্টোর 🎪</span>
+            </a>
+
             <a
               href="tel:01700000000"
-              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors"
+              className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors"
             >
               <Phone className="w-3.5 h-3.5 text-emerald-600" />
               <span>হটলাইন: 01700-000000</span>
