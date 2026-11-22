@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, Volume2, VolumeX, ArrowLeft, 
-  ChevronUp, ChevronDown, Compass, RefreshCw, CheckCircle2 
+  ChevronUp, ChevronDown, Compass, RefreshCw, CheckCircle2, Users 
 } from 'lucide-react';
 import { productService } from '../../services';
 import { apiClient } from '../../lib/api/client';
@@ -27,6 +28,8 @@ export const ToyStore3DApp: React.FC = () => {
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [selectedProductForModal, setSelectedProductForModal] = useState<any | null>(null);
+  const [hoveredProduct, setHoveredProduct] = useState<any | null>(null);
+  const [showFamily, setShowFamily] = useState<boolean>(true);
 
   // Post-Checkout Exit Animation State
   const [confirmedOrder, setConfirmedOrder] = useState<any | null>(null);
@@ -269,8 +272,23 @@ export const ToyStore3DApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Audio Ambiance & Cart Actions */}
+        {/* Audio Ambiance, Family Toggle & Cart Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Family Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowFamily(!showFamily)}
+            className={`px-3 py-2 rounded-2xl backdrop-blur-md text-xs font-black flex items-center gap-1.5 transition-all shadow cursor-pointer border ${
+              showFamily
+                ? 'bg-emerald-600/80 text-white border-emerald-400'
+                : 'bg-white/20 hover:bg-white/30 text-white border-white/20'
+            }`}
+            title="মা ও সোনামনিদের উপস্থিতি চালু/বন্ধ করুন"
+          >
+            <Users className="w-4 h-4" />
+            <span className="hidden md:inline">{showFamily ? 'পরিবার অন' : 'পরিবার লুকানো'}</span>
+          </button>
+
           {/* Audio toggle button */}
           <button
             type="button"
@@ -283,7 +301,7 @@ export const ToyStore3DApp: React.FC = () => {
             title="মৃদু মিউজিক চালু/বন্ধ করুন"
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            <span className="hidden md:inline">{soundEnabled ? 'সাউন্ড অন' : 'মিউজিক চালু করুন'}</span>
+            <span className="hidden md:inline">{soundEnabled ? 'সাউন্ড অন' : 'মিউজিক'}</span>
           </button>
 
           {/* Cart Button */}
@@ -302,6 +320,42 @@ export const ToyStore3DApp: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Floating Hover Product Card (Sleek, Clean, No giant 3D billboards!) */}
+      <AnimatePresence>
+        {hoveredProduct && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-2xl border-2 border-[#E76F51] flex items-center gap-3.5 max-w-[92vw] sm:max-w-md pointer-events-auto cursor-pointer hover:scale-105 transition-all"
+            onClick={() => setSelectedProductForModal({ product: hoveredProduct, initialTab: 'gallery' })}
+          >
+            <img
+              src={hoveredProduct.featuredImage || hoveredProduct.images?.main || (Array.isArray(hoveredProduct.images) ? hoveredProduct.images[0]?.url : '/items/busy-cube.jfif')}
+              alt={hoveredProduct.name}
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover bg-amber-50 shrink-0 border border-amber-200"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black bg-[#2D6A4F] text-white px-2 py-0.5 rounded-full uppercase">
+                  {getBengaliProductDetails(hoveredProduct).ageBadge || '১–৫ বছর'}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-gray-500">
+                  ক্লিক করে ৩ডি বিবরণ ও ভিডিও ডেমো দেখুন 👉
+                </span>
+              </div>
+              <h4 className="text-xs sm:text-sm font-black text-[#24221F] truncate mt-0.5">
+                {getBengaliProductDetails(hoveredProduct).bName || hoveredProduct.name}
+              </h4>
+              <div className="text-xs font-black text-[#E76F51] mt-0.5">
+                ৳{hoveredProduct.price || 750}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ================= 3D Canvas Viewport ================= */}
       <div className="relative flex-1 w-full h-full">
@@ -324,13 +378,16 @@ export const ToyStore3DApp: React.FC = () => {
               onSelectProduct={(prod) => {
                 setSelectedProductForModal({ product: prod, initialTab: 'gallery' });
               }}
+              onHoverProductChange={(prod) => setHoveredProduct(prod)}
             />
 
             {/* Mother, Daughter, and Son Walking Overlay */}
-            <FamilyWalkthroughOverlay
-              walkProgress={walkProgress}
-              isWalking={isWalking}
-            />
+            {showFamily && (
+              <FamilyWalkthroughOverlay
+                walkProgress={walkProgress}
+                isWalking={isWalking}
+              />
+            )}
           </>
         )}
       </div>

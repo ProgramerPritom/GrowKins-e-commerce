@@ -74,43 +74,40 @@ export const FamilyWalkthroughOverlay: React.FC<FamilyWalkthroughOverlayProps> =
   const activeDialogue = dialogues[currentDialogueIndex];
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-2 sm:pb-4 z-20 overflow-hidden">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-1 sm:pb-2 z-20 overflow-hidden">
       {/* Speech Bubble Floating Above Family */}
       <AnimatePresence mode="wait">
         {showBubble && activeDialogue && (
           <motion.div
             key={currentDialogueIndex}
-            initial={{ opacity: 0, y: 15, scale: 0.92 }}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.92 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="pointer-events-auto mb-3 max-w-[92vw] sm:max-w-md bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl border-2 border-[#E76F51]/40 text-[#24221F] flex items-center gap-3 relative cursor-pointer hover:border-[#E76F51] transition-all"
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="pointer-events-auto mb-1 max-w-[90vw] sm:max-w-sm bg-white/95 backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-xl border border-[#E76F51]/40 text-[#24221F] flex items-center gap-2.5 cursor-pointer hover:border-[#E76F51] transition-all"
             onClick={() => {
               setCurrentDialogueIndex((prev) => (prev + 1) % dialogues.length);
             }}
           >
             {/* Avatar badge */}
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-2xl shrink-0 shadow-inner border border-amber-200">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-lg shrink-0 border border-amber-200">
               {activeDialogue.avatar}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-[#E76F51] tracking-wide uppercase">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-[#E76F51] uppercase">
                   {activeDialogue.name}
                 </span>
-                <span className="text-[10px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full font-bold">
-                  ক্লিক করে পরবর্তী কথা শুনুন 💬
+                <span className="text-[9px] text-gray-500 font-bold">
+                  ক্লিক করে পরটা শুনুন 💬
                 </span>
               </div>
-              <p className="text-xs sm:text-sm font-bold text-gray-800 leading-snug mt-0.5">
+              <p className="text-xs font-bold text-gray-800 leading-tight mt-0.5">
                 "{activeDialogue.text}"
               </p>
             </div>
-
-            {/* Bubble Tail */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/95 rotate-45 border-r border-b border-[#E76F51]/40" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -120,16 +117,16 @@ export const FamilyWalkthroughOverlay: React.FC<FamilyWalkthroughOverlayProps> =
         animate={
           isWalking
             ? {
-                y: [0, -6, 0],
-                transition: { repeat: Infinity, duration: 0.55, ease: 'easeInOut' },
+                y: [0, -4, 0],
+                transition: { repeat: Infinity, duration: 0.45, ease: 'easeInOut' },
               }
             : {
-                y: [0, -2, 0],
+                y: [0, -1.5, 0],
                 transition: { repeat: Infinity, duration: 2.2, ease: 'easeInOut' },
               }
         }
         className="relative flex items-end justify-center select-none"
-        style={{ width: '320px', height: '170px' }}
+        style={{ width: '250px', height: '130px' }}
       >
         <svg
           viewBox="0 0 320 180"
