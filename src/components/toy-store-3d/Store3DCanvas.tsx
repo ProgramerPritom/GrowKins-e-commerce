@@ -43,11 +43,13 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
   const isDraggingRef = useRef<boolean>(false);
   const lastMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Compact, intimate boutique aisle length (14.5 meters instead of 26 meters!)
-  const aisleLength = 14.5;
+  // Dynamic boutique aisle length tailored exactly to the count of provider products!
+  const numBayPairs = Math.max(1, Math.ceil((products.length || 6) / 4));
+  const aisleLength = Math.max(6.5, numBayPairs * 2.2 + 2.0);
+
   useEffect(() => {
     targetZRef.current = 2.2 - walkProgress * (aisleLength - 1.2);
-  }, [walkProgress]);
+  }, [walkProgress, aisleLength]);
 
   // Procedural Colorful Kids Playmat Puzzle Floor Texture
   const createPlayfulPuzzleFloorTexture = () => {
