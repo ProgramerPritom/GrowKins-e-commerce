@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { getBengaliProductDetails } from '../toy-world/bengaliToyData';
 
 export interface Store3DCanvasProps {
   products: any[];
@@ -31,8 +32,8 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
   const hoveredItemRef = useRef<ProductMeshItem | null>(null);
 
   // Smooth camera position and look-at targets
-  const currentZRef = useRef<number>(2.0);
-  const targetZRef = useRef<number>(2.0);
+  const currentZRef = useRef<number>(2.2);
+  const targetZRef = useRef<number>(2.2);
   const currentYawRef = useRef<number>(0);
   const targetYawRef = useRef<number>(0);
   const currentPitchRef = useRef<number>(0);
@@ -45,8 +46,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
   // Update target Z from walkProgress smoothly
   const aisleLength = 26; // total walking depth
   useEffect(() => {
-    // Map 0 -> entrance (z = 2.0), 1 -> back (z = -aisleLength + 3.0)
-    targetZRef.current = 2.0 - walkProgress * (aisleLength - 1.0);
+    targetZRef.current = 2.2 - walkProgress * (aisleLength - 1.0);
   }, [walkProgress]);
 
   // Procedural Warm Oak Parquet Floor Texture
@@ -57,7 +57,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    // Rich warm oak background
     ctx.fillStyle = '#D4A373';
     ctx.fillRect(0, 0, 1024, 1024);
 
@@ -69,12 +68,10 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       const offsetX = (row % 2) * (plankW / 2);
 
       for (let x = -offsetX; x < 1024; x += plankW) {
-        // Individual plank shade variation
         const tone = 0.92 + (Math.sin(x * 12.3 + y * 7.1) * 0.5 + 0.5) * 0.16;
         ctx.fillStyle = `rgb(${Math.floor(212 * tone)}, ${Math.floor(163 * tone)}, ${Math.floor(115 * tone)})`;
         ctx.fillRect(x + 1, y + 1, plankW - 2, plankH - 2);
 
-        // Subtle fine wood grain
         ctx.strokeStyle = 'rgba(90, 50, 20, 0.06)';
         ctx.lineWidth = 1;
         for (let g = 0; g < 6; g++) {
@@ -85,7 +82,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
           ctx.stroke();
         }
 
-        // Crisp plank border joint
         ctx.strokeStyle = 'rgba(60, 35, 15, 0.22)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x, y, plankW, plankH);
@@ -99,7 +95,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     return tex;
   };
 
-  // Ceiling Grid Acoustic Tiles
+  // Ceiling Grid Texture
   const createCeilingTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -132,7 +128,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     return tex;
   };
 
-  // Welcome Arch Banner Texture (Clean, Elegant, No visual clash)
+  // Welcome Arch Sign
   const createWelcomeSignTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -140,7 +136,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    // Deep warm green & gold header board
     ctx.fillStyle = '#1D3557';
     ctx.roundRect(16, 16, 992, 224, 24);
     ctx.fill();
@@ -159,7 +154,100 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     ctx.font = 'bold 36px "Hind Siliguri", sans-serif';
     ctx.fillText('বাচ্চাদের সেরা শিক্ষণীয় ও নিরাপদ খেলনার রাজ্য', 512, 175);
 
+    return new THREE.CanvasTexture(canvas);
+  };
+
+  // Instant Procedural Toy Box Packaging Texture
+  // Renders IMMEDIATELY with bold Bengali title, colors, and price — NO blank white blocks!
+  const createInstantToyBoxTexture = (prod: any, loadedImg?: HTMLImageElement) => {
+    const bData = getBengaliProductDetails(prod);
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return new THREE.CanvasTexture(canvas);
+
+    // Box Background - Warm Buttercream / Branded border
+    ctx.fillStyle = '#FFFDF9';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Vibrant Toy Box Border Frame
+    ctx.lineWidth = 14;
+    ctx.strokeStyle = '#E76F51';
+    ctx.strokeRect(7, 7, 498, 498);
+
+    // Header Tag Pill
+    ctx.fillStyle = '#2D6A4F';
+    ctx.fillRect(14, 14, 484, 52);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 22px "Hind Siliguri", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🌟 GROWKINS TOYS • EDUCATIONAL', 256, 48);
+
+    // Center Image Window / Artwork Area
+    const imgX = 28;
+    const imgY = 76;
+    const imgW = 456;
+    const imgH = 340;
+
+    if (loadedImg && loadedImg.complete && loadedImg.naturalWidth > 0) {
+      // Draw actual high-res product photo fitted nicely
+      ctx.drawImage(loadedImg, imgX, imgY, imgW, imgH);
+      // Subtle gloss reflection stripe
+      const glossGrad = ctx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
+      glossGrad.addColorStop(0, 'rgba(255,255,255,0.22)');
+      glossGrad.addColorStop(0.3, 'rgba(255,255,255,0.0)');
+      glossGrad.addColorStop(1, 'rgba(255,255,255,0.08)');
+      ctx.fillStyle = glossGrad;
+      ctx.fillRect(imgX, imgY, imgW, imgH);
+    } else {
+      // Colorful fallback artwork while image is fetching
+      const artGrad = ctx.createLinearGradient(imgX, imgY, imgX, imgY + imgH);
+      artGrad.addColorStop(0, '#FFE8D6');
+      artGrad.addColorStop(1, '#DDBEA9');
+      ctx.fillStyle = artGrad;
+      ctx.fillRect(imgX, imgY, imgW, imgH);
+
+      ctx.fillStyle = '#E76F51';
+      ctx.font = 'bold 64px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🧸', 256, 250);
+
+      ctx.fillStyle = '#6B705C';
+      ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
+      ctx.fillText(bData.bName.slice(0, 15) || 'গ্রো কিন্স খেলনা', 256, 310);
+    }
+
+    // Inner photo border
+    ctx.strokeStyle = '#E8E0D2';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(imgX, imgY, imgW, imgH);
+
+    // Footer Info Bar: Bengali Title & Price Pill
+    ctx.fillStyle = '#24221F';
+    ctx.fillRect(14, 422, 484, 76);
+
+    // Bengali Name
+    ctx.fillStyle = '#FAF7F1';
+    ctx.font = 'bold 24px "Hind Siliguri", sans-serif';
+    ctx.textAlign = 'left';
+    const rawName = bData.bName || prod.name || 'শিক্ষণীয় খেলনা';
+    const shortName = rawName.length > 18 ? rawName.slice(0, 17) + '…' : rawName;
+    ctx.fillText(shortName, 28, 468);
+
+    // Price Badge
+    const priceText = `৳${prod.price || 750}`;
+    ctx.fillStyle = '#E76F51';
+    ctx.roundRect(360, 434, 126, 52, 12);
+    ctx.fill();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px "Hind Siliguri", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(priceText, 423, 470);
+
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   };
 
@@ -177,7 +265,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     scene.background = new THREE.Color('#FAF7F1');
     scene.fog = new THREE.FogExp2(0xFAF7F1, 0.022);
 
-    // 2. Camera (Realistic eye-height, natural human focal length)
+    // 2. Camera
     const camera = new THREE.PerspectiveCamera(52, width / height, 0.1, 100);
     camera.position.set(0, 1.45, currentZRef.current);
     cameraRef.current = camera;
@@ -189,12 +277,12 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
     rendererRef.current = renderer;
 
     container.replaceChildren(renderer.domElement);
 
-    // 4. Lighting Setup (Warm, Cozy Toy Boutique Ambiance)
+    // 4. Lighting Setup
     const ambientLight = new THREE.AmbientLight(0xFFF7EC, 1.4);
     scene.add(ambientLight);
 
@@ -203,29 +291,21 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     mainLight.castShadow = true;
     mainLight.shadow.mapSize.width = 2048;
     mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.camera.near = 0.5;
-    mainLight.shadow.camera.far = 40;
-    mainLight.shadow.camera.left = -6;
-    mainLight.shadow.camera.right = 6;
-    mainLight.shadow.camera.top = 6;
-    mainLight.shadow.camera.bottom = -30;
     mainLight.shadow.bias = -0.0005;
     scene.add(mainLight);
 
     // Hanging pendant lamps down the center ceiling
     for (let z = 2; z >= -aisleLength; z -= 5) {
-      const lampPoint = new THREE.PointLight(0xFFE2B0, 0.75, 7.5);
+      const lampPoint = new THREE.PointLight(0xFFE2B0, 0.8, 8);
       lampPoint.position.set(0, 3.1, z);
       scene.add(lampPoint);
 
-      // Rod
       const rodGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.7, 8);
       const rodMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
       const rod = new THREE.Mesh(rodGeo, rodMat);
       rod.position.set(0, 3.4, z);
       scene.add(rod);
 
-      // Dome lampshade
       const domeGeo = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
       const domeMat = new THREE.MeshStandardMaterial({ color: 0x2A9D8F, roughness: 0.3 });
       const dome = new THREE.Mesh(domeGeo, domeMat);
@@ -233,7 +313,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       dome.rotation.x = Math.PI;
       scene.add(dome);
 
-      // Warm glowing bulb
       const bulbGeo = new THREE.SphereGeometry(0.08, 12, 12);
       const bulbMat = new THREE.MeshBasicMaterial({ color: 0xFFF2C2 });
       const bulb = new THREE.Mesh(bulbGeo, bulbMat);
@@ -266,7 +345,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     ceiling.position.set(0, 3.8, -(aisleLength / 2 - 2));
     scene.add(ceiling);
 
-    // Exposed Wooden Ceiling Beams (Warm Scandinavian Oak)
+    // Exposed Wooden Ceiling Beams
     const beamGeo = new THREE.BoxGeometry(8, 0.22, 0.28);
     const beamMat = new THREE.MeshStandardMaterial({ color: 0x7F4F24, roughness: 0.6 });
     for (let z = 3; z >= -aisleLength; z -= 3.5) {
@@ -275,23 +354,23 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       scene.add(beam);
     }
 
-    // Walls (Warm Soft Cream)
+    // Walls
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xF5F0E6, roughness: 0.85 });
 
-    // Left Wall (x = -3.8)
+    // Left Wall
     const sideWallGeo = new THREE.PlaneGeometry(aisleLength + 10, 4);
     const leftWall = new THREE.Mesh(sideWallGeo, wallMat);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.position.set(-3.8, 1.9, -(aisleLength / 2 - 2));
     scene.add(leftWall);
 
-    // Right Wall (x = 3.8)
+    // Right Wall
     const rightWall = new THREE.Mesh(sideWallGeo, wallMat);
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.position.set(3.8, 1.9, -(aisleLength / 2 - 2));
     scene.add(rightWall);
 
-    // Back Wall with Glass Window & Sunlit Garden View
+    // Back Wall
     const backWallGeo = new THREE.PlaneGeometry(8, 4);
     const backWall = new THREE.Mesh(backWallGeo, wallMat);
     backWall.position.set(0, 1.9, -aisleLength - 1.5);
@@ -306,7 +385,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     backPoster.position.set(0, 2.1, -aisleLength - 1.45);
     scene.add(backPoster);
 
-    // Entrance Arch Welcome Sign (Floating gracefully overhead at entrance)
+    // Entrance Arch Sign
     const entranceSignGeo = new THREE.PlaneGeometry(4.8, 1.4);
     const entranceSignMat = new THREE.MeshBasicMaterial({
       map: createWelcomeSignTexture(),
@@ -316,9 +395,9 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     entranceSign.position.set(0, 2.9, 1.6);
     scene.add(entranceSign);
 
-    // 6. Realistic Multi-Tier Scandinavian Shelving Units
+    // 6. Realistic Multi-Tier Shelving Units
     const shelfWoodMat = new THREE.MeshStandardMaterial({
-      color: 0xB8834E, // Warm Natural Pine/Oak
+      color: 0xB8834E,
       roughness: 0.45,
       metalness: 0.05,
     });
@@ -332,18 +411,16 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
 
     const shelfDepth = 0.55;
     const shelfBayWidth = 2.4;
-    const tierHeights = [0.25, 0.95, 1.65, 2.35]; // Realistic reachable heights
+    const tierHeights = [0.25, 0.95, 1.65, 2.35];
 
     const createShelfBay = (x: number, z: number, isLeft: boolean) => {
       const bayGroup = new THREE.Group();
 
-      // Back panel
       const backGeo = new THREE.BoxGeometry(shelfBayWidth, 2.6, 0.03);
       const backPanel = new THREE.Mesh(backGeo, shelfBackMat);
       backPanel.position.set(0, 1.3, -shelfDepth / 2 + 0.015);
       bayGroup.add(backPanel);
 
-      // Side dividers (posts)
       const postGeo = new THREE.BoxGeometry(0.06, 2.6, shelfDepth);
       const postL = new THREE.Mesh(postGeo, shelfWoodMat);
       postL.position.set(-shelfBayWidth / 2, 1.3, 0);
@@ -355,7 +432,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       postR.castShadow = true;
       bayGroup.add(postR);
 
-      // Horizontal Tiers & Under-shelf LED warm light strips
       tierHeights.forEach((y) => {
         const tierGeo = new THREE.BoxGeometry(shelfBayWidth, 0.05, shelfDepth);
         const tier = new THREE.Mesh(tierGeo, shelfWoodMat);
@@ -363,7 +439,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
         tier.receiveShadow = true;
         bayGroup.add(tier);
 
-        // Warm LED strip under tier (except bottom)
         if (y > 0.3) {
           const ledGeo = new THREE.BoxGeometry(shelfBayWidth - 0.1, 0.015, 0.03);
           const ledStrip = new THREE.Mesh(ledGeo, ledMat);
@@ -371,7 +446,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
           bayGroup.add(ledStrip);
         }
 
-        // Shelf Front Lip / Price Strip (where prices sit in real shops)
         const lipGeo = new THREE.BoxGeometry(shelfBayWidth, 0.04, 0.02);
         const lipMat = new THREE.MeshStandardMaterial({ color: 0x8C5628 });
         const lip = new THREE.Mesh(lipGeo, lipMat);
@@ -384,40 +458,32 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       scene.add(bayGroup);
     };
 
-    // Place shelf bays on left (x = -2.2) and right (x = 2.2)
-    // Leaving a spacious 3.3m wide central shopping aisle!
     for (let z = 0; z >= -aisleLength + 2; z -= 3.0) {
       createShelfBay(-2.2, z, true);
       createShelfBay(2.2, z, false);
     }
 
-    // 7. Place Products FIRMLY ON THE SHELVES (No floating, authentic packaging!)
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.crossOrigin = 'anonymous';
-
+    // 7. PLACE TOYS DIRECTLY FACING THE USER (Angled ~25-35° forward into aisle)
     const productMeshList: ProductMeshItem[] = [];
 
-    // Calculate realistic resting shelf slots:
-    // Middle tier (y = 0.95 + 0.025 shelf top = 0.975) and Eye tier (y = 1.65 + 0.025 = 1.675)
-    const shelfSlots: { x: number; y: number; z: number; rotY: number }[] = [];
+    // Distinct shelf slots:
+    // Left shelf slots: rotY = -0.42 (turns front face +Z toward the oncoming customer!)
+    // Right shelf slots: rotY = +0.42 (turns front face +Z toward the oncoming customer!)
+    const shelfSlots: { x: number; y: number; z: number; rotY: number; isLeft: boolean }[] = [];
     let currentBayZ = 0;
 
     while (currentBayZ >= -aisleLength + 2) {
-      // Left shelf bay (x = -1.95, facing +X)
-      // Two products on eye-level shelf (y = 1.675)
-      shelfSlots.push({ x: -1.92, y: 1.675, z: currentBayZ - 0.55, rotY: Math.PI / 2 });
-      shelfSlots.push({ x: -1.92, y: 1.675, z: currentBayZ + 0.55, rotY: Math.PI / 2 });
-      // Two products on waist-level shelf (y = 0.975)
-      shelfSlots.push({ x: -1.92, y: 0.975, z: currentBayZ - 0.55, rotY: Math.PI / 2 });
-      shelfSlots.push({ x: -1.92, y: 0.975, z: currentBayZ + 0.55, rotY: Math.PI / 2 });
+      // Left shelf (x = -1.90, eye level y = 1.675 and waist level y = 0.975)
+      shelfSlots.push({ x: -1.88, y: 1.675, z: currentBayZ - 0.55, rotY: -0.42, isLeft: true });
+      shelfSlots.push({ x: -1.88, y: 1.675, z: currentBayZ + 0.55, rotY: -0.42, isLeft: true });
+      shelfSlots.push({ x: -1.88, y: 0.975, z: currentBayZ - 0.55, rotY: -0.42, isLeft: true });
+      shelfSlots.push({ x: -1.88, y: 0.975, z: currentBayZ + 0.55, rotY: -0.42, isLeft: true });
 
-      // Right shelf bay (x = 1.95, facing -X)
-      // Two products on eye-level shelf
-      shelfSlots.push({ x: 1.92, y: 1.675, z: currentBayZ + 0.55, rotY: -Math.PI / 2 });
-      shelfSlots.push({ x: 1.92, y: 1.675, z: currentBayZ - 0.55, rotY: -Math.PI / 2 });
-      // Two products on waist-level shelf
-      shelfSlots.push({ x: 1.92, y: 0.975, z: currentBayZ + 0.55, rotY: -Math.PI / 2 });
-      shelfSlots.push({ x: 1.92, y: 0.975, z: currentBayZ - 0.55, rotY: -Math.PI / 2 });
+      // Right shelf (x = 1.90)
+      shelfSlots.push({ x: 1.88, y: 1.675, z: currentBayZ + 0.55, rotY: 0.42, isLeft: false });
+      shelfSlots.push({ x: 1.88, y: 1.675, z: currentBayZ - 0.55, rotY: 0.42, isLeft: false });
+      shelfSlots.push({ x: 1.88, y: 0.975, z: currentBayZ + 0.55, rotY: 0.42, isLeft: false });
+      shelfSlots.push({ x: 1.88, y: 0.975, z: currentBayZ - 0.55, rotY: 0.42, isLeft: false });
 
       currentBayZ -= 3.0;
     }
@@ -428,79 +494,86 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
 
       const imgUrl = prod.featuredImage || prod.images?.main || (Array.isArray(prod.images) ? prod.images[0]?.url : '/items/busy-cube.jfif');
 
-      // Realistic standing toy box dimensions (W: 0.5m, H: 0.42m, D: 0.16m)
-      const boxW = 0.50;
-      const boxH = 0.42;
-      const boxD = 0.16;
+      // Generous, prominent toy box dimensions (W: 0.54m, H: 0.48m, D: 0.18m)
+      const boxW = 0.54;
+      const boxH = 0.48;
+      const boxD = 0.18;
 
       const boxGeo = new THREE.BoxGeometry(boxW, boxH, boxD);
 
-      // Clean, bright boutique packaging sides (soft white & pastel brand colors)
-      const sideMat = new THREE.MeshStandardMaterial({
-        color: 0xFAFAFA,
-        roughness: 0.3,
+      // Instant procedural texture — ready on frame 1 with 0 delay!
+      const initialTex = createInstantToyBoxTexture(prod);
+
+      const toyFaceMat = new THREE.MeshStandardMaterial({
+        map: initialTex,
+        roughness: 0.25,
         metalness: 0.05,
       });
-      const topMat = new THREE.MeshStandardMaterial({
-        color: 0xE76F51, // Branded GrowKins coral top
+
+      const sidePackagingMat = new THREE.MeshStandardMaterial({
+        color: 0xF4F1DE,
+        roughness: 0.4,
+      });
+
+      const topPackagingMat = new THREE.MeshStandardMaterial({
+        color: 0xE76F51, // Branded coral lid
         roughness: 0.35,
       });
 
-      // Default face before texture loads
-      const defaultFaceMat = new THREE.MeshStandardMaterial({
-        color: 0xFFF8F0,
-        roughness: 0.3,
-      });
+      // Materials: [+X, -X, +Y, -Y, +Z (Front), -Z (Back)]
+      // Both front face (+Z) AND the inner face facing the aisle get the toy artwork!
+      const materials = [
+        slot.isLeft ? toyFaceMat : sidePackagingMat, // +X
+        slot.isLeft ? sidePackagingMat : toyFaceMat, // -X
+        topPackagingMat,                              // +Y
+        sidePackagingMat,                             // -Y
+        toyFaceMat,                                   // +Z (Front face directly facing user!)
+        sidePackagingMat,                             // -Z
+      ];
 
-      // Box materials array: [+X, -X, +Y, -Y, +Z (Front), -Z (Back)]
-      const materials = [sideMat, sideMat, topMat, sideMat, defaultFaceMat, sideMat];
-      const productBox = new THREE.Mesh(boxGeo, materials);
+      const productBox = new THREE.Mesh(boxGeo, materials as any);
 
+      // Asynchronously load the actual high-res image and swap into canvas
       if (imgUrl) {
-        textureLoader.load(
-          imgUrl,
-          (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            const frontFaceMat = new THREE.MeshStandardMaterial({
-              map: tex,
-              roughness: 0.2,
-              metalness: 0.05,
-            });
-            materials[4] = frontFaceMat; // Set front face (+Z)
-            productBox.material = [...materials] as any;
-          },
-          undefined,
-          () => {}
-        );
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const updatedTex = createInstantToyBoxTexture(prod, img);
+          toyFaceMat.map = updatedTex;
+          toyFaceMat.needsUpdate = true;
+        };
+        img.src = imgUrl;
       }
 
       // Rest FIRMLY on the shelf surface!
-      // Center Y = shelf surface + half height
       const restingY = slot.y + boxH / 2;
       productBox.position.set(slot.x, restingY, slot.z);
       productBox.rotation.y = slot.rotY;
 
-      // Slight natural angle toward the incoming customer
-      if (slot.rotY > 0) {
-        productBox.rotation.y += Math.PI / 16;
-      } else {
-        productBox.rotation.y -= Math.PI / 16;
-      }
-
       productBox.castShadow = true;
       productBox.receiveShadow = true;
 
-      // Subtle shadow pad under the box on the shelf
-      const shadowPadGeo = new THREE.PlaneGeometry(boxW * 0.95, boxD * 0.95);
+      // Soft contact shadow under the toy box on the shelf
+      const shadowPadGeo = new THREE.PlaneGeometry(boxW * 0.98, boxD * 0.98);
       const shadowPadMat = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
-        opacity: 0.25,
+        opacity: 0.28,
       });
       const shadowPad = new THREE.Mesh(shadowPadGeo, shadowPadMat);
       shadowPad.rotation.x = -Math.PI / 2;
       shadowPad.position.set(0, -boxH / 2 + 0.005, 0);
       productBox.add(shadowPad);
+
+      // Cute Shelf-Edge Acrylic Price Tag Standee in front of the toy
+      const priceStandeeGeo = new THREE.BoxGeometry(0.22, 0.08, 0.02);
+      const priceStandeeMat = new THREE.MeshStandardMaterial({
+        color: 0x24221F,
+        roughness: 0.3,
+      });
+      const priceStandee = new THREE.Mesh(priceStandeeGeo, priceStandeeMat);
+      priceStandee.position.set(0, -boxH / 2 + 0.04, boxD / 2 + 0.05);
+      productBox.add(priceStandee);
 
       scene.add(productBox);
 
@@ -508,7 +581,7 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
         boxMesh: productBox,
         product: prod,
         shelfPosition: new THREE.Vector3(slot.x, restingY, slot.z),
-        shelfRotationY: productBox.rotation.y,
+        shelfRotationY: slot.rotY,
       });
     });
 
@@ -523,7 +596,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Smooth drag look-around
       if (isDraggingRef.current) {
         const deltaX = e.clientX - lastMousePosRef.current.x;
         const deltaY = e.clientY - lastMousePosRef.current.y;
@@ -532,12 +604,10 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
         targetYawRef.current -= deltaX * 0.0025;
         targetPitchRef.current -= deltaY * 0.0018;
 
-        // Realistic head-turn clamps
         targetYawRef.current = Math.max(-0.55, Math.min(0.55, targetYawRef.current));
         targetPitchRef.current = Math.max(-0.25, Math.min(0.25, targetPitchRef.current));
       }
 
-      // Raycast against products
       raycaster.setFromCamera(mouse, camera);
       const candidateBoxes = productItemsRef.current.map((item) => item.boxMesh);
       const hits = raycaster.intersectObjects(candidateBoxes, false);
@@ -578,12 +648,10 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       }
     };
 
-    // Wheel to walk smoothly
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const delta = e.deltaY * 0.0006;
-      // Convert to walk progress (0 to 1)
-      const currentWalk = (2.0 - targetZRef.current) / (aisleLength - 1.0);
+      const currentWalk = (2.2 - targetZRef.current) / (aisleLength - 1.0);
       const nextWalk = Math.max(0, Math.min(1, currentWalk + delta));
       onWalkProgressChange(nextWalk);
     };
@@ -603,13 +671,10 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
 
       const delta = Math.min(clock.getDelta(), 0.1);
 
-      // Buttery smooth exponential damping for camera position Z
-      // High-precision smooth glide
       const smoothFactor = 1.0 - Math.pow(0.001, delta);
       currentZRef.current += (targetZRef.current - currentZRef.current) * smoothFactor;
       camera.position.z = currentZRef.current;
 
-      // Smooth look-around rotation
       currentYawRef.current += (targetYawRef.current - currentYawRef.current) * (smoothFactor * 1.5);
       currentPitchRef.current += (targetPitchRef.current - currentPitchRef.current) * (smoothFactor * 1.5);
 
@@ -617,13 +682,12 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
       camera.rotation.y = currentYawRef.current;
       camera.rotation.x = currentPitchRef.current;
 
-      // Smooth hover pull-forward effect (Gently slides forward ~4cm when hovered)
+      // Subtle hover pull-forward effect (gently slides forward ~5cm when hovered)
       productItemsRef.current.forEach((item) => {
         const isHovered = hoveredItemRef.current === item;
-        const targetPull = isHovered ? 0.08 : 0.0;
-        const targetScale = isHovered ? 1.04 : 1.0;
+        const targetPull = isHovered ? 0.09 : 0.0;
+        const targetScale = isHovered ? 1.05 : 1.0;
 
-        // Pull slightly toward center aisle on hover
         const dirX = item.shelfPosition.x > 0 ? -1 : 1;
         const targetX = item.shelfPosition.x + dirX * targetPull;
 
@@ -636,7 +700,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
 
     animate();
 
-    // 10. Responsive Window Resize
     const handleResize = () => {
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const newW = container.clientWidth || window.innerWidth;
@@ -647,7 +710,6 @@ export const Store3DCanvas: React.FC<Store3DCanvasProps> = ({
     };
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
