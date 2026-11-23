@@ -22,6 +22,14 @@ export class ApiOrderService implements IOrderService {
     return apiClient.post<ApiResponse<AdminOrder>>(API_ENDPOINTS.orders.create, order);
   }
 
+  public update(id: string, payload: Partial<AdminOrder>): Promise<ApiResponse<AdminOrder>> {
+    return apiClient.patch<ApiResponse<AdminOrder>>(API_ENDPOINTS.orders.update(id), payload);
+  }
+
+  public delete(id: string): Promise<ApiResponse<{ id: string; deleted: boolean }>> {
+    return apiClient.delete<ApiResponse<{ id: string; deleted: boolean }>>(API_ENDPOINTS.orders.delete(id));
+  }
+
   public updateStatus(id: string, payload: UpdateOrderStatusPayload): Promise<ApiResponse<AdminOrder>> {
     return apiClient.patch<ApiResponse<AdminOrder>>(API_ENDPOINTS.orders.updateStatus(id), payload);
   }

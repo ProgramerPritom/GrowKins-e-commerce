@@ -78,7 +78,7 @@ Your tone is warm, polite, reassuring, and 100% natural conversational Bengali (
    - কোনো ধারালো কোণা নেই, ১০০% মসৃণ হ্যান্ড-স্যান্ডেড ফিনিশ।
 4. **How to Order (অর্ডার করার নিয়ম):**
    - যেকোনো খেলনার "এখনই অর্ডার করুন" বাটন চাপলে বা পেজের নিচে নাম, ফোন ও ঠিকানা লিখে অর্ডার সাবমিট করলেই কনফার্ম হয়ে যাবে।
-5. **Customer Hotline:** 01700-000000
+5. **Customer Hotline:** 01767026831
 
 === LIVE TOY CATALOG IN STOCK (${products.length} Products) ===
 ${catalogSummary}
@@ -86,63 +86,105 @@ ${catalogSummary}
 === INSTRUCTIONS FOR YOUR REPLIES ===
 - Always reply in warm, natural Bengali (বাংলা).
 - Answer the customer's question directly and concisely (2 to 3 short paragraphs maximum).
+- If the customer asks for price reduction or discounts ("kom hobe na?", "দাম কম হবে?", "কিছু ছাড় দিন", "aro kom koren"):
+  Explain politely that our prices are already deeply discounted special offer prices for 100% premium smooth, non-toxic child-safe toys. Mention that ordering 2 or more toys combines shipping for extra savings!
+- If the customer asks how to order ("kivabe order korbo?", "অর্ডার কীভাবে করব?"):
+  Explain that they just select toys and fill in their name, mobile phone number, and address at the bottom of the page with Cash on Delivery.
+- If the customer asks about delivery timeline ("kobe pabo?", "koto din lagbe?"):
+  Tell them: Dhaka within 24-48 hours, outside Dhaka 2-4 days.
+- If the customer asks for contact/hotline: Provide 01767026831.
 - When recommending a toy, mention its exact name, age suitability, and offer price in Taka (৳).
-- Keep bullet points clear and engaging.
 - Never make up fake toy names; only recommend from the above catalog.`;
   };
 
-  // Find best matching product for suggestion card
+  // Find best matching product for suggestion card (ONLY when query or reply refers to toys)
   const findMatchingProduct = (query: string, botReply: string) => {
     const combined = (query + ' ' + botReply).toLowerCase();
     for (const p of products) {
       const pName = (p.name || '').toLowerCase();
       const pId = (p.id || '').toLowerCase();
-      if (combined.includes(pName.slice(0, 6)) || combined.includes(pId)) {
+      if ((pName.length > 3 && combined.includes(pName.slice(0, 5))) || combined.includes(pId)) {
         return p;
       }
     }
-    // Age based fallback
-    if (combined.includes('১') || combined.includes('1')) {
+    // Age based matching
+    if (combined.includes('১ বছর') || combined.includes('1 year') || combined.includes('1 yr') || combined.includes('১-৩')) {
       return products.find(p => (p.ageBadge || '').includes('1')) || products[0];
     }
-    if (combined.includes('২') || combined.includes('2')) {
-      return products.find(p => (p.ageBadge || '').includes('2')) || products[1];
+    if (combined.includes('২ বছর') || combined.includes('2 year') || combined.includes('2 yr') || combined.includes('২-৪')) {
+      return products.find(p => (p.ageBadge || '').includes('2')) || products[1] || products[0];
     }
-    if (combined.includes('৩') || combined.includes('3')) {
-      return products.find(p => (p.ageBadge || '').includes('3')) || products[2];
+    if (combined.includes('৩ বছর') || combined.includes('3 year') || combined.includes('3 yr') || combined.includes('৩-৬')) {
+      return products.find(p => (p.ageBadge || '').includes('3')) || products[2] || products[0];
     }
-    return products[0];
+    return undefined;
   };
 
   // Local Fallback RAG Engine
   const generateLocalFallbackReply = (q: string): { reply: string; matchedProduct?: any } => {
-    const queryLower = q.toLowerCase();
+    const queryLower = q.toLowerCase().trim();
 
-    if (queryLower.includes('ডেলিভারি') || queryLower.includes('চার্জ') || queryLower.includes('delivery')) {
+    // 1. Bargaining / Discount / Price reduction queries
+    if (
+      queryLower.includes('kom') || queryLower.includes('কম') ||
+      queryLower.includes('discount') || queryLower.includes('ছাড়') ||
+      queryLower.includes('offer') || queryLower.includes('কমান') ||
+      queryLower.includes('dam') && queryLower.includes('kom')
+    ) {
       return {
-        reply: 'আমাদের হোম ডেলিভারি চার্জ:\n• ঢাকার ভেতরে: মাত্র ৳৭০ (২৪-৪৮ ঘণ্টায় ডেলিভারি)\n• ঢাকার বাইরে (যেকোনো জেলায়): মাত্র ৳১৩০ (২-৪ দিনের মধ্যে ডেলিভারি)\n\nআমরা সম্পূর্ণ ক্যাশ অন ডেলিভারিতে পণ্য পৌঁছাই—পণ্য হাতে পেয়ে চেক করে টাকা দিতে পারবেন!'
+        reply: 'সম্মানিত গ্রাহক, আমাদের প্রতিটি শিক্ষণীয় খেলনায় ইতিমধ্যেই সর্বোচ্চ ছাড় দিয়ে স্পেশাল অফার প্রাইজ নির্ধারণ করা হয়েছে। শিশুদের শতভাগ নিরাপত্তা নিশ্চিতে আমরা ১০০% মসৃণ বিচউড কাঠ ও নন-টক্সিক ফুড-গ্রেড রঙ ব্যবহার করি।\n\nতবে আপনি একসাথে একাধিক খেলনা অর্ডার করলে সম্পূর্ণ ডেলিভারি চার্জ একসাথেই প্রযোজ্য হবে! আপনি চাইলে পছন্দের খেলনাটি বেছে নিয়ে এখনই অর্ডার কনফার্ম করতে পারেন।'
       };
     }
 
-    if (queryLower.includes('ক্যাশ অন') || queryLower.includes('cod') || queryLower.includes('অগ্রিম')) {
+    // 2. Delivery charge queries
+    if (queryLower.includes('ডেলিভারি') || queryLower.includes('চার্জ') || queryLower.includes('delivery') || queryLower.includes('charge')) {
       return {
-        reply: 'জ্বী, আমাদের সারা বাংলাদেশেই ক্যাশ অন ডেলিভারি (Cash on Delivery) সুবিধা রয়েছে। আপনাকে কোনো প্রকার অগ্রিম টাকা দিতে হবে না। পার্সেল হাতে পেয়ে খুলে দেখে তারপর মূল্য পরিশোধ করবেন।'
+        reply: 'আমাদের হোম ডেলিভারি চার্জ:\n• ঢাকার ভেতরে: মাত্র ৳৭০ (২৪ থেকে ৪৮ ঘণ্টার মধ্যে ডেলিভারি)\n• ঢাকার বাইরে (যেকোনো জেলা/উপজেলায়): মাত্র ৳১৩০ (২ থেকে ৪ দিনের মধ্যে ডেলিভারি)\n\nআমরা সম্পূর্ণ ক্যাশ অন ডেলিভারিতে পণ্য পৌঁছাই—পণ্য হাতে পেয়ে চেক করে টাকা দিতে পারবেন!'
       };
     }
 
+    // 3. Delivery timeline / When will I get it
+    if (queryLower.includes('kobe') || queryLower.includes('কবে') || queryLower.includes('koto din') || queryLower.includes('কতদিন') || queryLower.includes('সময়')) {
+      return {
+        reply: 'আমাদের ডেলিভারি সময়:\n• ঢাকার ভেতরে: অর্ডার নিশ্চিত করার ২৪ থেকে ৪৮ ঘণ্টার মধ্যে পৌঁছে যাবে।\n• ঢাকার বাইরে: ২ থেকে ৪ কার্যদিবসের মধ্যে আপনার ঠিকানায় সরাসরি হোম ডেলিভারি দেওয়া হবে।'
+      };
+    }
+
+    // 4. Cash on delivery / Advance payment
+    if (queryLower.includes('ক্যাশ অন') || queryLower.includes('cod') || queryLower.includes('অগ্রিম') || queryLower.includes('advance')) {
+      return {
+        reply: 'জ্বী! আমাদের সারা বাংলাদেশেই ১০০% ক্যাশ অন ডেলিভারি (Cash on Delivery) সুবিধা রয়েছে। আপনাকে কোনো প্রকার অগ্রিম টাকা দিতে হবে না। পার্সেল হাতে পেয়ে খুলে দেখে তারপর মূল্য পরিশোধ করবেন।'
+      };
+    }
+
+    // 5. How to order
+    if (queryLower.includes('kivabe') || queryLower.includes('কীভাবে') || queryLower.includes('order') || queryLower.includes('অর্ডার') || queryLower.includes('kinbo')) {
+      return {
+        reply: 'অর্ডার করার নিয়ম খুবই সহজ:\n১. পছন্দের খেলনার নিচে "এখনই অর্ডার করুন" বাটনে ক্লিক করুন।\n২. অথবা পেজের নিচে গিয়ে আপনার নাম, ১১ ডিজিটের মোবাইল নম্বর এবং সম্পূর্ণ ডেলিভারি ঠিকানা লিখে "অর্ডার কনফার্ম করুন" বাটনে চাপ দিন।\n\nআমাদের প্রতিনিধি আপনার নম্বরে কল দিয়ে দ্রুত পার্সেল পাঠিয়ে দেবেন!'
+      };
+    }
+
+    // 6. Hotline / Contact
+    if (queryLower.includes('phone') || queryLower.includes('number') || queryLower.includes('hotline') || queryLower.includes('নম্বর') || queryLower.includes('কল') || queryLower.includes('যোগাযোগ')) {
+      return {
+        reply: 'আমাদের হটলাইন নম্বর: 📞 01767026831\nসকাল ৯টা থেকে রাত ১০টা পর্যন্ত যেকোনো তথ্যের জন্য সরাসরি কল বা হোয়াটসঅ্যাপ করতে পারেন।'
+      };
+    }
+
+    // 7. Product or Age recommendations
     const matched = findMatchingProduct(q, '');
     if (matched) {
       const price = Number(matched.price) || 0;
       const originalPrice = Number(matched.originalPrice || matched.compareAtPrice) || '';
       return {
-        reply: `আপনার সোনামণির জন্য আমাদের সেরা পরামর্শ: "${matched.name}"।\n• বয়স: ${matched.ageBadge || '১–৫ বছর'}\n• বিশেষ অফার মূল্য: মাত্র ৳${price}${originalPrice ? ` (আগের দাম: ৳${originalPrice})` : ''}\n• ১০০% পরিবেশবান্ধব নিরাপদ কাঠ ও মসৃণ ফিনিশিং যা শিশুর মানসিক ও শারীরিক বিকাশে অত্যন্ত সহায়ক।\n\nনিচের বাটন চেপে এটি সরাসরি আপনার অর্ডারে যুক্ত করতে পারেন!`,
+        reply: `আপনার সোনামণির জন্য আমাদের সেরা পরামর্শ: "${matched.name}"।\n• উপযুক্ত বয়স: ${matched.ageBadge || '১–৫ বছর'}\n• বিশেষ অফার মূল্য: মাত্র ৳${price}${originalPrice ? ` (আগের দাম: ৳${originalPrice})` : ''}\n• ১০০% পরিবেশবান্ধব নিরাপদ কাঠ ও মসৃণ ফিনিশিং যা শিশুর মানসিক ও শারীরিক বিকাশে অত্যন্ত সহায়ক।\n\nনিচের বাটন চেপে এটি সরাসরি আপনার অর্ডারে যুক্ত করতে পারেন!`,
         matchedProduct: matched
       };
     }
 
+    // Default polite conversational response
     return {
-      reply: 'GrowKins এর প্রতিটি খেলনাই শিশুদের ব্রেন ডেভেলপমেন্ট ও স্ক্রিন-টাইম কমানোর জন্য বিশেষভাবে তৈরি। আমাদের ক্যাটালগ থেকে যেকোনো খেলনা বেছে নিতে পারেন অথবা নিচের বাটনগুলো চেপে আপনার শিশুর বয়স জানাতে পারেন!',
-      matchedProduct: products[0]
+      reply: 'GrowKins এ আপনাকে স্বাগতম! আমাদের প্রতিটি খেলনাই শিশুদের ব্রেন ডেভেলপমেন্ট ও স্ক্রিন-টাইম কমানোর জন্য বিশেষভাবে তৈরি।\n\nআপনার বাচ্চার বয়স কত কিংবা কোনো নির্দিষ্ট খেলনা সম্পর্কে জানতে চান? আমাকে জানালে আমি সেরা তথ্য দিয়ে সাহায্য করব। অথবা আমাদের হটলাইনে কল করতে পারেন: 01767026831।'
     };
   };
 

@@ -166,6 +166,31 @@ export class MockOrderService implements IOrderService {
     MockDatabase.setOrders([newOrder, ...orders]);
     return { success: true, data: newOrder, message: 'Order placed successfully.' };
   }
+
+  public async update(id: string, payload: Partial<AdminOrder>): Promise<ApiResponse<AdminOrder>> {
+    await delay(200);
+    const orders = MockDatabase.getOrders();
+    const index = orders.findIndex((o) => o.id === id || o.orderNumber === id);
+    if (index === -1) throw new ApiError(`Order "${id}" not found.`, 404);
+
+    const updated: AdminOrder = {
+      ...orders[index],
+      ...payload,
+      updatedAt: new Date().toISOString()
+    };
+
+    orders[index] = updated;
+    MockDatabase.setOrders(orders);
+    return { success: true, data: updated, message: 'Order updated successfully.' };
+  }
+
+  public async delete(id: string): Promise<ApiResponse<{ id: string; deleted: boolean }>> {
+    await delay(200);
+    const orders = MockDatabase.getOrders();
+    const filtered = orders.filter((o) => o.id !== id && o.orderNumber !== id);
+    MockDatabase.setOrders(filtered);
+    return { success: true, data: { id, deleted: true }, message: 'Order deleted successfully.' };
+  }
 }
 
 export const mockOrderService = new MockOrderService();
