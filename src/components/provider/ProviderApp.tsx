@@ -4,7 +4,7 @@ import {
   Lock, LogOut, Phone, MapPin, Calendar,
   ChevronRight, Copy, Check, Filter, Plus, Edit, Trash2,
   Image as ImageIcon, Video, ExternalLink, Menu, X, ArrowLeft,
-  ShoppingBag, ChevronLeft, Save, Sparkles, Users, LayoutGrid, List, FileText, Heart, MessageSquare
+  ShoppingBag, ChevronLeft, Save, Sparkles, Users, LayoutGrid, List, FileText, Heart, MessageSquare, Printer
 } from 'lucide-react';
 import { orderService, productService } from '../../services';
 import { apiClient } from '../../lib/api/client';
@@ -14,6 +14,7 @@ import { PRODUCTS } from '../../data/products';
 import { BENGALI_TOY_MAP } from '../toy-world/bengaliToyData';
 import { InvoiceModal } from './InvoiceModal';
 import { EditOrderModal } from './EditOrderModal';
+import { PrintableTemplateModal } from './PrintableTemplateModal';
 
 type ProviderTab = 'orders' | 'products' | 'customers' | 'new-product' | 'media' | 'delivery';
 
@@ -59,6 +60,32 @@ export const ProviderApp: React.FC = () => {
     name: string;
     facebookUrl: string;
     notes: string;
+  } | null>(null);
+
+  // Manual Customers (+ Add Customer)
+  const [manualCustomers, setManualCustomers] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('gk_crm_manual_customers');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+  const [addingNewCustomer, setAddingNewCustomer] = useState<boolean>(false);
+  const [newCustName, setNewCustName] = useState<string>('');
+  const [newCustPhone, setNewCustPhone] = useState<string>('');
+  const [newCustAddress, setNewCustAddress] = useState<string>('');
+  const [newCustDistrict, setNewCustDistrict] = useState<string>('ঢাকা');
+  const [newCustFacebook, setNewCustFacebook] = useState<string>('');
+  const [newCustNotes, setNewCustNotes] = useState<string>('');
+  const [newCustToy, setNewCustToy] = useState<string>('');
+
+  // Printable Greeting & Thank You Card Modal
+  const [printableTemplate, setPrintableTemplate] = useState<{
+    customerName: string;
+    customerPhone?: string;
+    orderNumber?: string;
+    items?: { name: string; quantity: number }[];
+    type: 'thankyou' | 'greeting';
   } | null>(null);
 
   // Products State
@@ -430,29 +457,7 @@ export const ProviderApp: React.FC = () => {
       : 'পণ্যটি ল্যান্ডিং পেজে সফলভাবে সক্রিয় করা হয়েছে!');
   };
 
-  // Bulk actions for storefront visibility
-  const handleSelectAllProducts = async () => {
-    const allIds = products.map(p => p.id);
-    await syncActiveLandingIds(allIds);
-    showToast(`সবগুলো (${allIds.length}টি) পণ্য ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!`);
-  };
 
-  const handleDeselectAllProducts = async () => {
-    await syncActiveLandingIds([]);
-    showToast('সকল পণ্য ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে');
-  };
-
-  const handleSelectTop20 = async () => {
-    const top20 = products.slice(0, 20).map(p => p.id);
-    await syncActiveLandingIds(top20);
-    showToast('প্রথম ২০টি মূল খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
-  };
-
-  const handleSelectTop10 = async () => {
-    const top10 = products.slice(0, 10).map(p => p.id);
-    await syncActiveLandingIds(top10);
-    showToast('প্রথম ১০টি খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
-  };
 
   // Customer CRM aggregation from orders
   const customersList = useMemo(() => {
@@ -521,12 +526,72 @@ export const ProviderApp: React.FC = () => {
       }
     });
 
+    // Merge manually created customers
+    manualCustomers.forEach(mc => {
+      const phone = (mc.phone || '').trim();
+      if (!phone || map.has(phone)) return;
+      const meta = crmMeta[phone] || { facebookUrl: mc.facebookUrl || '', notes: mc.notes || '' };
+      map.set(phone, {
+        phone,
+        name: mc.name || 'সম্মানিত অভিভাবক',
+        streetAddress: mc.streetAddress || '',
+        district: mc.district || 'ঢাকা',
+        orders: [],
+        totalSpent: Number(mc.totalSpent) || 0,
+        itemsBought: mc.itemsBought || (mc.preferredToy ? [{ id: 'toy_1', name: mc.preferredToy, quantity: 1, price: 0 }] : []),
+        facebookUrl: meta.facebookUrl || mc.facebookUrl || '',
+        notes: meta.notes || mc.notes || '',
+        lastOrderDate: mc.createdAt || new Date().toISOString()
+      });
+    });
+
     return Array.from(map.values()).sort((a, b) => {
       const dateA = a.lastOrderDate ? new Date(a.lastOrderDate).getTime() : 0;
       const dateB = b.lastOrderDate ? new Date(b.lastOrderDate).getTime() : 0;
       return dateB - dateA;
     });
-  }, [orders, crmMeta]);
+  }, [orders, crmMeta, manualCustomers]);
+
+  // Save New Customer
+  const handleSaveNewCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustPhone.trim()) {
+      showToast('গ্রাহকের মোবাইল নম্বর দিন');
+      return;
+    }
+    const customer = {
+      id: 'cust_' + Date.now(),
+      name: newCustName.trim() || 'সম্মানিত অভিভাবক',
+      phone: newCustPhone.trim(),
+      streetAddress: newCustAddress.trim(),
+      district: newCustDistrict.trim() || 'ঢাকা',
+      facebookUrl: newCustFacebook.trim(),
+      notes: newCustNotes.trim(),
+      preferredToy: newCustToy.trim(),
+      totalSpent: 0,
+      createdAt: new Date().toISOString()
+    };
+    const updated = [customer, ...manualCustomers];
+    setManualCustomers(updated);
+    localStorage.setItem('gk_crm_manual_customers', JSON.stringify(updated));
+
+    if (newCustFacebook || newCustNotes) {
+      handleSaveCrmCustomer(newCustPhone.trim(), {
+        facebookUrl: newCustFacebook.trim(),
+        notes: newCustNotes.trim()
+      });
+    }
+
+    setAddingNewCustomer(false);
+    setNewCustName('');
+    setNewCustPhone('');
+    setNewCustAddress('');
+    setNewCustDistrict('ঢাকা');
+    setNewCustFacebook('');
+    setNewCustNotes('');
+    setNewCustToy('');
+    showToast('নতুন কাস্টমার সফলভাবে সিআরএমে যুক্ত হয়েছে!');
+  };
 
   // Filtered customers for CRM search
   const filteredCustomers = useMemo(() => {
@@ -1087,6 +1152,23 @@ export const ProviderApp: React.FC = () => {
                               <span>ইনভয়েস</span>
                             </button>
 
+                            {/* 1-Click Printable Thank You Card */}
+                            <button
+                              type="button"
+                              onClick={() => setPrintableTemplate({
+                                customerName: order.customer?.name || order.deliveryAddress?.fullName || 'সম্মানিত অভিভাবক',
+                                customerPhone: order.customer?.phone || order.deliveryAddress?.phone,
+                                orderNumber: order.orderNumber,
+                                items: Array.isArray(order.items) ? order.items.map(it => ({ name: it.name, quantity: it.quantity })) : [],
+                                type: 'thankyou'
+                              })}
+                              className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs flex items-center gap-1 border border-amber-200 transition-colors cursor-pointer"
+                              title="পার্সেলের জন্য রঙিন ধন্যবাদ কার্ড প্রিন্ট করুন"
+                            >
+                              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                              <span>ধন্যবাদ কার্ড</span>
+                            </button>
+
                             {/* Edit Order */}
                             <button
                               type="button"
@@ -1188,16 +1270,27 @@ export const ProviderApp: React.FC = () => {
                 </p>
               </div>
 
-              {/* CRM Search */}
-              <div className="relative w-full sm:w-80">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={customerSearchQuery}
-                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                  placeholder="নাম, ফোন, ফেসবুক বা খেলনার নাম খুঁজুন..."
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white shadow-xs"
-                />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAddingNewCustomer(true)}
+                  className="px-4 py-2.5 rounded-xl bg-[#E76F51] hover:bg-[#D45A3D] text-white text-xs font-black flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>নতুন কাস্টমার যোগ করুন</span>
+                </button>
+
+                {/* CRM Search */}
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={customerSearchQuery}
+                    onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                    placeholder="নাম, ফোন, ফেসবুক বা খেলনার নাম খুঁজুন..."
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white shadow-xs"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1384,36 +1477,68 @@ export const ProviderApp: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Quick Message Templates */}
-                        {latestOrder && (
-                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
-                            <span className="text-[11px] font-bold text-gray-400">মেসেজ টেমপ্লেট:</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const greeting = `আসসালামু আলাইকুম ${cust.name} আপু/ভাইয়া! 💚\nGrowKins Toy World থেকে আপনার সাথে যোগাযোগ করা হচ্ছে। আপনার অর্ডারকৃত পণ্যের ব্যাপারে কোনো জিজ্ঞাসা থাকলে আমাদের জানাতে পারেন। হটলাইন: 01767026831`;
-                                navigator.clipboard.writeText(greeting);
-                                showToast('শুভেচ্ছা বার্তা কপি হয়েছে!');
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <MessageSquare className="w-3 h-3 text-blue-500" />
-                              <span>শুভেচ্ছা বার্তা কপি</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const thankyou = `প্রিয় ${cust.name} আপু/ভাইয়া, 💚\nআপনার সন্তানের জন্য GrowKins-এর মন্টেসরি কাঠের শিক্ষণীয় খেলনাগুলো বেছে নেওয়ার জন্য আন্তরিক ধন্যবাদ। পণ্য হাতে পাওয়ার পর কেমন লাগলো আমাদের ফেসবুক পেইজ বা হটলাইনে (01767026831) জানাবেন!`;
-                                navigator.clipboard.writeText(thankyou);
-                                showToast('ধন্যবাদ বার্তা কপি হয়েছে!');
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <Heart className="w-3 h-3 text-rose-500" />
-                              <span>ধন্যবাদ বার্তা কপি</span>
-                            </button>
-                          </div>
-                        )}
+                        {/* Quick Message Templates & Printable Cards */}
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
+                          <span className="text-[11px] font-bold text-gray-400">টেমপ্লেট ও কার্ড:</span>
+
+                          {/* Print Thank You Card */}
+                          <button
+                            type="button"
+                            onClick={() => setPrintableTemplate({
+                              customerName: cust.name,
+                              customerPhone: cust.phone,
+                              orderNumber: latestOrder?.orderNumber,
+                              items: cust.itemsBought.map(it => ({ name: it.name, quantity: it.quantity })),
+                              type: 'thankyou'
+                            })}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>💚 ধন্যবাদ কার্ড (Print/PDF)</span>
+                          </button>
+
+                          {/* Print Greeting Card */}
+                          <button
+                            type="button"
+                            onClick={() => setPrintableTemplate({
+                              customerName: cust.name,
+                              customerPhone: cust.phone,
+                              orderNumber: latestOrder?.orderNumber,
+                              items: cust.itemsBought.map(it => ({ name: it.name, quantity: it.quantity })),
+                              type: 'greeting'
+                            })}
+                            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>🎈 শুভেচ্ছা কার্ড (Print/PDF)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const greeting = `আসসালামু আলাইকুম ${cust.name} আপু/ভাইয়া! 💚\nGrowKins Toy World থেকে আপনার সাথে যোগাযোগ করা হচ্ছে। আপনার অর্ডারকৃত পণ্যের ব্যাপারে কোনো জিজ্ঞাসা থাকলে আমাদের জানাতে পারেন। হটলাইন: 01767026831`;
+                              navigator.clipboard.writeText(greeting);
+                              showToast('শুভেচ্ছা বার্তা কপি হয়েছে!');
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <MessageSquare className="w-3 h-3 text-blue-500" />
+                            <span>শুভেচ্ছা কপি</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const thankyou = `প্রিয় ${cust.name} আপু/ভাইয়া, 💚\nআপনার সন্তানের জন্য GrowKins-এর মন্টেসরি কাঠের শিক্ষণীয় খেলনাগুলো বেছে নেওয়ার জন্য আন্তরিক ধন্যবাদ। পণ্য হাতে পাওয়ার পর কেমন লাগলো আমাদের ফেসবুক পেইজ বা হটলাইনে (01767026831) জানাবেন!`;
+                              navigator.clipboard.writeText(thankyou);
+                              showToast('ধন্যবাদ বার্তা কপি হয়েছে!');
+                            }}
+                            className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <Heart className="w-3 h-3 text-rose-500" />
+                            <span>ধন্যবাদ কপি</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -1471,59 +1596,6 @@ export const ProviderApp: React.FC = () => {
                 >
                   <Plus className="w-4 h-4" />
                   <span>নতুন খেলনা যোগ করুন</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Storefront Display Selection Control Panel */}
-            <div className="bg-gradient-to-r from-[#24221F] via-[#383530] to-[#24221F] text-white p-5 rounded-2xl shadow-md border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-[#F4A261]" />
-                  <h4 className="font-black text-sm text-white">
-                    ল্যান্ডিং পেজ ডিসপ্লে কন্ট্রোল
-                  </h4>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-black text-xs animate-pulse">
-                    বর্তমানে ল্যান্ডিংয়ে সক্রিয়: {activeLandingProductIds.length}টি খেলনা
-                  </span>
-                </div>
-                <p className="text-xs text-gray-300">
-                  আপনি যে কয়টি পণ্য নির্বাচন করবেন (১০টি, ২০টি বা ৫০টি), ঠিক সেই কয়টি পণ্যই সরাসরি 
-                  <a href="/growkins-toy-world" target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#F4A261] ml-1">
-                    /growkins-toy-world
-                  </a> পেজে লাইভ থাকবে।
-                </p>
-              </div>
-
-              {/* Quick Bulk Selection Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleSelectTop10}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer border border-white/10"
-                >
-                  প্রথম ১০টি বাছুন
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSelectTop20}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-[#F4A261] font-bold text-xs transition-colors cursor-pointer border border-white/10"
-                >
-                  প্রথম ২০টি বাছুন
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSelectAllProducts}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-sm"
-                >
-                  সব সক্রিয় ({products.length}টি)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeselectAllProducts}
-                  className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs transition-colors cursor-pointer border border-rose-500/30"
-                >
-                  সব বাদ দিন
                 </button>
               </div>
             </div>
@@ -2309,6 +2381,158 @@ export const ProviderApp: React.FC = () => {
                 সংরক্ষণ করুন
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Printable Greeting & Thank You Card Modal */}
+      {printableTemplate && (
+        <PrintableTemplateModal
+          customerName={printableTemplate.customerName}
+          customerPhone={printableTemplate.customerPhone}
+          orderNumber={printableTemplate.orderNumber}
+          items={printableTemplate.items}
+          initialType={printableTemplate.type}
+          onClose={() => setPrintableTemplate(null)}
+        />
+      )}
+
+      {/* Add New Customer Modal */}
+      {addingNewCustomer && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#E76F51]/10 text-[#E76F51] flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-black text-gray-900">
+                  নতুন কাস্টমার যোগ করুন
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddingNewCustomer(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewCustomer} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    কাস্টমারের নাম <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCustName}
+                    onChange={(e) => setNewCustName(e.target.value)}
+                    placeholder="যেমন: সায়মা সুলতানা"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    মোবাইল নম্বর (১১ ডিজিট) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={newCustPhone}
+                    onChange={(e) => setNewCustPhone(e.target.value)}
+                    placeholder="01XXXXXXXXX"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    ঠিকানা (রোড/বাসা/এলাকা)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustAddress}
+                    onChange={(e) => setNewCustAddress(e.target.value)}
+                    placeholder="যেমন: বাড়ি ১২, রোড ৫, ধানমন্ডি"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-700 mb-1">
+                    জেলা
+                  </label>
+                  <input
+                    type="text"
+                    value={newCustDistrict}
+                    onChange={(e) => setNewCustDistrict(e.target.value)}
+                    placeholder="যেমন: ঢাকা / চট্টগ্রাম / সিলেট"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">
+                  ফেসবুক প্রোফাইল বা পেজ লিংক
+                </label>
+                <input
+                  type="url"
+                  value={newCustFacebook}
+                  onChange={(e) => setNewCustFacebook(e.target.value)}
+                  placeholder="https://facebook.com/username"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">
+                  পছন্দের খেলনা বা ইতিমধ্যে নেওয়া পণ্য
+                </label>
+                <input
+                  type="text"
+                  value={newCustToy}
+                  onChange={(e) => setNewCustToy(e.target.value)}
+                  placeholder="যেমন: মন্টেসরি বিজি কিউব"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">
+                  কাস্টমার নোট (টেক্সট এডিটর)
+                </label>
+                <textarea
+                  rows={3}
+                  value={newCustNotes}
+                  onChange={(e) => setNewCustNotes(e.target.value)}
+                  placeholder="বাচ্চার বয়স, বিশেষ পছন্দ বা গ্রাহক সম্পর্কিত তথ্য লিখে রাখুন..."
+                  className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setAddingNewCustomer(false)}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 cursor-pointer"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#E76F51] hover:bg-[#D45A3D] text-white font-black text-xs shadow-xs cursor-pointer"
+                >
+                  কাস্টমার যোগ করুন
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
