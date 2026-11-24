@@ -10,9 +10,10 @@ import { apiClient } from '../../lib/api/client';
 import { PRODUCTS } from '../../data/products';
 import type { AdminOrder } from '../../types/admin';
 import { GeminiToyChatbot } from './GeminiToyChatbot';
-import { getBengaliProductDetails } from './bengaliToyData';
+import { getBengaliProductDetails, BENGALI_TOY_MAP } from './bengaliToyData';
 import { ToyProductDetailModal } from './ToyProductDetailModal';
 import { CelebrationFirecrackers } from './CelebrationFirecrackers';
+import { ToyGridSkeleton } from './ToySkeletonLoader';
 
 interface SelectedItem {
   productId: string;
@@ -113,18 +114,18 @@ export const GrowKinsToyWorldApp: React.FC = () => {
           console.warn('Error reading active toy ids from storage', e);
         }
 
-        const activeIds = serverActiveIds || localActiveIds;
+        const curatedToyIds = Object.keys(BENGALI_TOY_MAP);
+        const activeIds = serverActiveIds || localActiveIds || curatedToyIds;
 
         let visibleProducts: any[];
         if (activeIds && Array.isArray(activeIds) && activeIds.length > 0) {
-          // Exactly the products selected by the provider (5, 12, 25, 43 or any count)
           visibleProducts = allCatalog.filter(p => activeIds.includes(p.id));
-          if (visibleProducts.length === 0) {
-            visibleProducts = allCatalog;
-          }
         } else {
-          // If no restriction set, show all available products
-          visibleProducts = allCatalog;
+          visibleProducts = allCatalog.filter(p => curatedToyIds.includes(p.id));
+        }
+
+        if (visibleProducts.length === 0) {
+          visibleProducts = allCatalog.filter(p => curatedToyIds.includes(p.id));
         }
 
         if (isMounted) {
@@ -133,15 +134,17 @@ export const GrowKinsToyWorldApp: React.FC = () => {
       } catch (err) {
         console.warn('API product fetch fallback to local products:', err);
         if (isMounted) {
+          const curatedToyIds = Object.keys(BENGALI_TOY_MAP);
           let activeIds: string[] | null = null;
           try {
             const saved = localStorage.getItem('gk_active_toy_world_ids');
             if (saved) activeIds = JSON.parse(saved);
           } catch (e) {}
-          const visible = (activeIds && Array.isArray(activeIds) && activeIds.length > 0)
-            ? PRODUCTS.filter(p => activeIds!.includes(p.id))
-            : PRODUCTS;
-          setProducts(visible.length > 0 ? visible : PRODUCTS);
+          const targetIds = (activeIds && Array.isArray(activeIds) && activeIds.length > 0)
+            ? activeIds
+            : curatedToyIds;
+          const visible = PRODUCTS.filter(p => targetIds.includes(p.id));
+          setProducts(visible.length > 0 ? visible : PRODUCTS.slice(0, 20));
         }
       } finally {
         if (isMounted) setLoadingProducts(false);
@@ -257,7 +260,7 @@ export const GrowKinsToyWorldApp: React.FC = () => {
     const cleanedPhone = customerPhone.trim().replace(/\D/g, '');
     const phoneRegex = /^01[3-9]\d{8}$/;
     if (!phoneRegex.test(cleanedPhone)) {
-      setFormError('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 01712345678)');
+      setFormError('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 01767026831)');
       return;
     }
 
@@ -381,11 +384,11 @@ export const GrowKinsToyWorldApp: React.FC = () => {
             </a>
 
             <a
-              href="tel:01700000000"
+              href="tel:01767026831"
               className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors"
             >
               <Phone className="w-3.5 h-3.5 text-emerald-600" />
-              <span>হটলাইন: 01700-000000</span>
+              <span>হটলাইন: 01767026831</span>
             </a>
 
             <button
@@ -470,10 +473,7 @@ export const GrowKinsToyWorldApp: React.FC = () => {
           </div>
 
           {loadingProducts ? (
-            <div className="p-16 rounded-3xl bg-white border border-[#E8E0D2] shadow-sm text-center">
-              <RefreshCw className="w-10 h-10 animate-spin mx-auto text-[#E76F51] mb-3" />
-              <p className="text-base font-bold text-gray-700">খেলনা ক্যাটালগ লোড হচ্ছে...</p>
-            </div>
+            <ToyGridSkeleton count={8} />
           ) : products.length === 0 ? (
             <div className="p-16 rounded-3xl bg-white border border-[#E8E0D2] shadow-sm text-center space-y-3">
               <ShoppingBag className="w-12 h-12 mx-auto text-gray-300" />
@@ -875,7 +875,7 @@ export const GrowKinsToyWorldApp: React.FC = () => {
                       required
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="যেমন: 01712345678"
+                      placeholder="যেমন: 01767026831"
                       className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/10 bg-gray-50/50"
                     />
                   </div>

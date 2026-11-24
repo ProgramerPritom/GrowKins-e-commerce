@@ -4,7 +4,7 @@ import {
   Lock, LogOut, Phone, MapPin, Calendar,
   ChevronRight, Copy, Check, Filter, Plus, Edit, Trash2,
   Image as ImageIcon, Video, ExternalLink, Menu, X, ArrowLeft,
-  ShoppingBag, ChevronLeft, Save, Sparkles
+  ShoppingBag, ChevronLeft, Save, Sparkles, Users, LayoutGrid, List, FileText, Heart, MessageSquare
 } from 'lucide-react';
 import { orderService, productService } from '../../services';
 import { apiClient } from '../../lib/api/client';
@@ -12,8 +12,10 @@ import type { AdminOrder, OrderStatus } from '../../types/admin';
 import { MediaPicker } from '../admin/common/MediaPicker';
 import { PRODUCTS } from '../../data/products';
 import { BENGALI_TOY_MAP } from '../toy-world/bengaliToyData';
+import { InvoiceModal } from './InvoiceModal';
+import { EditOrderModal } from './EditOrderModal';
 
-type ProviderTab = 'orders' | 'products' | 'new-product' | 'media' | 'delivery';
+type ProviderTab = 'orders' | 'products' | 'customers' | 'new-product' | 'media' | 'delivery';
 
 export const ProviderApp: React.FC = () => {
   // Authentication State
@@ -37,12 +39,33 @@ export const ProviderApp: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
+  // Order CRUD & Invoice Modals
+  const [invoiceOrder, setInvoiceOrder] = useState<AdminOrder | null>(null);
+  const [editingOrder, setEditingOrder] = useState<AdminOrder | null>(null);
+
+  // Customer CRM State
+  const [customerSearchQuery, setCustomerSearchQuery] = useState<string>('');
+  const [crmMeta, setCrmMeta] = useState<Record<string, { facebookUrl: string; notes: string }>>(() => {
+    try {
+      const saved = localStorage.getItem('gk_crm_customer_meta');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Failed to parse saved CRM meta', e);
+    }
+    return {};
+  });
+  const [editingCrmCustomer, setEditingCrmCustomer] = useState<{
+    phone: string;
+    name: string;
+    facebookUrl: string;
+    notes: string;
+  } | null>(null);
+
   // Products State
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [productSearchQuery, setProductSearchQuery] = useState<string>('');
-  const [productPage, setProductPage] = useState<number>(1);
-  const [productsPerPage] = useState<number>(12);
+  const [productViewMode, setProductViewMode] = useState<'grid' | 'list'>('grid');
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Active Landing Products Selection State (Controls what shows on /growkins-toy-world)
@@ -138,19 +161,18 @@ export const ProviderApp: React.FC = () => {
     }
   };
 
-  // Load Products
+  // Load Products (Toy World specific catalog)
   const loadProducts = async () => {
     setLoadingProducts(true);
     try {
       const res = await productService.list({ limit: 100 });
-      if (res && Array.isArray(res.data) && res.data.length > 0) {
-        setProducts(res.data);
-      } else {
-        setProducts(PRODUCTS);
-      }
+      let list: any[] = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data : PRODUCTS;
+      // Strictly filter out clothing/apparel to keep only toys for toy world
+      list = list.filter((p: any) => p.category !== 'Clothing' && p.category !== 'clothing');
+      setProducts(list);
     } catch (err) {
       console.warn('Fallback to local products for provider:', err);
-      setProducts(PRODUCTS);
+      setProducts(PRODUCTS.filter((p: any) => p.category !== 'Clothing' && p.category !== 'clothing'));
     } finally {
       setLoadingProducts(false);
     }
@@ -199,6 +221,45 @@ export const ProviderApp: React.FC = () => {
     } finally {
       setUpdatingOrderId(null);
     }
+  };
+
+  // Delete Order
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm('আপনি কি নিশ্চিত যে এই অর্ডারটি মুছে ফেলতে চান?')) return;
+    try {
+      await orderService.delete(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      if (selectedOrder?.id === orderId) setSelectedOrder(null);
+      showToast('অর্ডারটি সফলভাবে মুছে ফেলা হয়েছে');
+    } catch (err) {
+      console.error('Failed to delete order:', err);
+      showToast('অর্ডার মুছতে সমস্যা হয়েছে');
+    }
+  };
+
+  // Update Order
+  const handleUpdateOrder = async (orderId: string, updatedPayload: Partial<AdminOrder>) => {
+    try {
+      await orderService.update(orderId, updatedPayload);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updatedPayload } : o));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, ...updatedPayload } : null);
+      }
+      showToast('অর্ডারের তথ্য সফলভাবে আপডেট করা হয়েছে');
+      setEditingOrder(null);
+    } catch (err) {
+      console.error('Failed to update order:', err);
+      showToast('অর্ডার আপডেট করতে সমস্যা হয়েছে');
+    }
+  };
+
+  // Save CRM Customer Details (Facebook, Notes)
+  const handleSaveCrmCustomer = (phone: string, meta: { facebookUrl: string; notes: string }) => {
+    const updated = { ...crmMeta, [phone]: meta };
+    setCrmMeta(updated);
+    localStorage.setItem('gk_crm_customer_meta', JSON.stringify(updated));
+    setEditingCrmCustomer(null);
+    showToast('কাস্টমার তথ্য ও নোট সফলভাবে সংরক্ষিত হয়েছে');
   };
 
   const handleCopyPhone = (phone: string) => {
@@ -360,12 +421,12 @@ export const ProviderApp: React.FC = () => {
   // Toggle individual product landing page visibility
   const handleToggleLandingProduct = async (productId: string) => {
     const exists = activeLandingProductIds.includes(productId);
-    const updated = exists 
+    const updated = exists
       ? activeLandingProductIds.filter(id => id !== productId)
       : [...activeLandingProductIds, productId];
     await syncActiveLandingIds(updated);
-    showToast(exists 
-      ? 'পণ্যটি ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে' 
+    showToast(exists
+      ? 'পণ্যটি ল্যান্ডিং পেজ থেকে নিষ্ক্রিয় করা হয়েছে'
       : 'পণ্যটি ল্যান্ডিং পেজে সফলভাবে সক্রিয় করা হয়েছে!');
   };
 
@@ -393,12 +454,93 @@ export const ProviderApp: React.FC = () => {
     showToast('প্রথম ১০টি খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
   };
 
-  // Paginated Products
-  const totalProductPages = Math.ceil(filteredProducts.length / productsPerPage) || 1;
-  const paginatedProducts = useMemo(() => {
-    const start = (productPage - 1) * productsPerPage;
-    return filteredProducts.slice(start, start + productsPerPage);
-  }, [filteredProducts, productPage, productsPerPage]);
+  // Customer CRM aggregation from orders
+  const customersList = useMemo(() => {
+    const map = new Map<string, {
+      phone: string;
+      name: string;
+      streetAddress: string;
+      district: string;
+      orders: AdminOrder[];
+      totalSpent: number;
+      itemsBought: { id?: string; name: string; quantity: number; price: number; image?: string }[];
+      facebookUrl: string;
+      notes: string;
+      lastOrderDate: string;
+    }>();
+
+    orders.forEach(order => {
+      const phone = (order.customer?.phone || order.deliveryAddress?.phone || '').trim();
+      if (!phone) return;
+      const name = order.customer?.name || order.deliveryAddress?.fullName || 'সম্মানিত অভিভাবক';
+      const streetAddress = order.deliveryAddress?.streetAddress || '';
+      const district = order.deliveryAddress?.district || 'ঢাকা';
+      const orderTotal = Number(order.total) || 0;
+      const orderDate = order.createdAt || '';
+
+      if (!map.has(phone)) {
+        const meta = crmMeta[phone] || { facebookUrl: '', notes: '' };
+        map.set(phone, {
+          phone,
+          name,
+          streetAddress,
+          district,
+          orders: [order],
+          totalSpent: orderTotal,
+          itemsBought: [],
+          facebookUrl: meta.facebookUrl || '',
+          notes: meta.notes || order.notes || '',
+          lastOrderDate: orderDate
+        });
+      } else {
+        const existing = map.get(phone)!;
+        existing.orders.push(order);
+        existing.totalSpent += orderTotal;
+        if (orderDate && (!existing.lastOrderDate || new Date(orderDate) > new Date(existing.lastOrderDate))) {
+          existing.lastOrderDate = orderDate;
+        }
+      }
+
+      // Collect items bought
+      const existing = map.get(phone)!;
+      if (Array.isArray(order.items)) {
+        order.items.forEach((it, idx) => {
+          const found = existing.itemsBought.find(b => b.name === it.name);
+          if (found) {
+            found.quantity += (Number(it.quantity) || 1);
+          } else {
+            existing.itemsBought.push({
+              id: (it as any).id || (it as any).productId || String(idx),
+              name: it.name,
+              quantity: Number(it.quantity) || 1,
+              price: Number(it.price) || 0,
+              image: it.image
+            });
+          }
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => {
+      const dateA = a.lastOrderDate ? new Date(a.lastOrderDate).getTime() : 0;
+      const dateB = b.lastOrderDate ? new Date(b.lastOrderDate).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [orders, crmMeta]);
+
+  // Filtered customers for CRM search
+  const filteredCustomers = useMemo(() => {
+    const q = customerSearchQuery.toLowerCase().trim();
+    if (!q) return customersList;
+    return customersList.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.phone.includes(q) ||
+      c.district.toLowerCase().includes(q) ||
+      c.facebookUrl.toLowerCase().includes(q) ||
+      c.notes.toLowerCase().includes(q) ||
+      c.itemsBought.some(it => it.name.toLowerCase().includes(q))
+    );
+  }, [customersList, customerSearchQuery]);
 
   // Stats
   const stats = useMemo(() => {
@@ -567,8 +709,8 @@ export const ProviderApp: React.FC = () => {
             <button
               onClick={() => { setActiveTab('orders'); setSidebarOpen(false); }}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'orders'
-                  ? 'bg-[#E76F51] text-white shadow-md'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#E76F51] text-white shadow-md'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -583,10 +725,26 @@ export const ProviderApp: React.FC = () => {
             </button>
 
             <button
+              onClick={() => { setActiveTab('customers'); setSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'customers'
+                ? 'bg-[#E76F51] text-white shadow-md'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-4 h-4" />
+                <span>কাস্টমার লিস্ট (CRM)</span>
+              </div>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/10 text-emerald-300">
+                {customersList.length} জন
+              </span>
+            </button>
+
+            <button
               onClick={() => { setActiveTab('products'); setSidebarOpen(false); }}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'products'
-                  ? 'bg-[#E76F51] text-white shadow-md'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#E76F51] text-white shadow-md'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -601,8 +759,8 @@ export const ProviderApp: React.FC = () => {
             <button
               onClick={() => { handleResetProductForm(); setActiveTab('new-product'); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'new-product'
-                  ? 'bg-[#E76F51] text-white shadow-md'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#E76F51] text-white shadow-md'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
                 }`}
             >
               <Plus className="w-4 h-4" />
@@ -620,8 +778,8 @@ export const ProviderApp: React.FC = () => {
             <button
               onClick={() => { setActiveTab('delivery'); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'delivery'
-                  ? 'bg-[#E76F51] text-white shadow-md'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#E76F51] text-white shadow-md'
+                : 'text-gray-300 hover:bg-white/10 hover:text-white'
                 }`}
             >
               <Truck className="w-4 h-4" />
@@ -662,6 +820,7 @@ export const ProviderApp: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="font-black text-base text-gray-900">
               {activeTab === 'orders' && '📦 অর্ডার ম্যানেজমেন্ট ও ডেলিভারি লোকেশন'}
+              {activeTab === 'customers' && '👥 কাস্টমার লিস্ট ও অর্ডার ইতিহাস (CRM)'}
               {activeTab === 'products' && '🧸 টয় ওয়ার্ল্ড প্রোডাক্ট ক্যাটালগ'}
               {activeTab === 'new-product' && (editingProductId ? '✏️ খেলনা সম্পাদনা' : '➕ নতুন খেলনা প্রোডাক্ট তৈরি')}
               {activeTab === 'delivery' && '⚙️ ডেলিভারি চার্জ সেটিংস'}
@@ -751,8 +910,8 @@ export const ProviderApp: React.FC = () => {
                     key={tab.id}
                     onClick={() => { setOrderStatusFilter(tab.id); setOrderPage(1); }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${orderStatusFilter === tab.id
-                        ? 'bg-[#E76F51] text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-[#E76F51] text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                   >
                     {tab.label}
@@ -902,12 +1061,12 @@ export const ProviderApp: React.FC = () => {
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             <select
                               value={order.status}
                               disabled={updatingOrderId === order.id}
                               onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                              className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold bg-white text-gray-800 focus:outline-none focus:border-[#E76F51] shadow-xs cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold bg-white text-gray-800 focus:outline-none focus:border-[#E76F51] shadow-xs cursor-pointer"
                             >
                               <option value="pending">অপেক্ষমান (Pending)</option>
                               <option value="confirmed">নিশ্চিত (Confirmed)</option>
@@ -917,6 +1076,38 @@ export const ProviderApp: React.FC = () => {
                               <option value="cancelled">বাতিল (Cancelled)</option>
                             </select>
 
+                            {/* 1-Click Invoice */}
+                            <button
+                              type="button"
+                              onClick={() => setInvoiceOrder(order)}
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 border border-emerald-200 transition-colors cursor-pointer"
+                              title="ইনভয়েস তৈরি ও প্রিন্ট করুন"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>ইনভয়েস</span>
+                            </button>
+
+                            {/* Edit Order */}
+                            <button
+                              type="button"
+                              onClick={() => setEditingOrder(order)}
+                              className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer"
+                              title="অর্ডারের ঠিকানা ও তথ্য পরিবর্তন করুন"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete Order */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                              title="অর্ডার মুছে ফেলুন"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* View Detail Modal */}
                             <button
                               onClick={() => setSelectedOrder(order)}
                               className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
@@ -960,8 +1151,8 @@ export const ProviderApp: React.FC = () => {
                         key={pageNum}
                         onClick={() => setOrderPage(pageNum)}
                         className={`w-7 h-7 rounded-xl text-xs font-bold cursor-pointer transition-colors ${orderPage === pageNum
-                            ? 'bg-[#E76F51] text-white shadow-xs'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#E76F51] text-white shadow-xs'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         {pageNum}
@@ -983,6 +1174,255 @@ export const ProviderApp: React.FC = () => {
           </div>
         )}
 
+        {/* Tab: Customer CRM as per Order */}
+        {activeTab === 'customers' && (
+          <div className="p-4 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                  <Users className="w-6 h-6 text-[#E76F51]" />
+                  <span>কাস্টমার লিস্ট ও অর্ডার বিবরণ (CRM)</span>
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  প্রতিটি কাস্টমারের ক্রয়কৃত পণ্যের হিসাব, মোট খরচ, ফেসবুক প্রোফাইল ও নিজস্ব কাস্টমার নোট
+                </p>
+              </div>
+
+              {/* CRM Search */}
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={customerSearchQuery}
+                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                  placeholder="নাম, ফোন, ফেসবুক বা খেলনার নাম খুঁজুন..."
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white shadow-xs"
+                />
+              </div>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট কাস্টমার</p>
+                <p className="text-xl font-black text-gray-900 mt-0.5">{customersList.length} জন</p>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট অর্ডার সংখ্যা</p>
+                <p className="text-xl font-black text-blue-600 mt-0.5">{orders.length} টি</p>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট বিক্রয় রেভিনিউ</p>
+                <p className="text-xl font-black text-emerald-600 mt-0.5">
+                  ৳{customersList.reduce((sum, c) => sum + c.totalSpent, 0)}
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">গড় অর্ডার মূল্য</p>
+                <p className="text-xl font-black text-purple-600 mt-0.5">
+                  ৳{customersList.length > 0 ? Math.round(customersList.reduce((s, c) => s + c.totalSpent, 0) / customersList.length) : 0}
+                </p>
+              </div>
+            </div>
+
+            {/* Customers List Container */}
+            <div className="space-y-4">
+              {filteredCustomers.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-200">
+                  <Users className="w-10 h-10 mx-auto text-gray-300 mb-2" />
+                  <p className="text-sm font-bold text-gray-600">কোনো কাস্টমার পাওয়া যায়নি</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredCustomers.map((cust) => {
+                    const latestOrder = cust.orders[0];
+                    return (
+                      <div
+                        key={cust.phone}
+                        className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs hover:shadow-md transition-shadow space-y-4"
+                      >
+                        {/* Top: Customer Name, Phone, Total Spend & Badges */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#E76F51] to-[#F4A261] text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                              {cust.name.slice(0, 1) || 'C'}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-extrabold text-gray-900 text-sm">{cust.name}</h4>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                  {cust.district || 'ঢাকা'}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
+                                  {cust.orders.length}টি অর্ডার
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <a
+                                  href={`tel:${cust.phone}`}
+                                  className="inline-flex items-center gap-1 font-bold text-xs text-blue-600 hover:text-blue-800"
+                                >
+                                  <Phone className="w-3 h-3" />
+                                  <span>{cust.phone}</span>
+                                </a>
+                                <button
+                                  onClick={() => handleCopyPhone(cust.phone)}
+                                  className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                  title="ফোন নম্বর কপি করুন"
+                                >
+                                  {copiedPhone === cust.phone ? (
+                                    <Check className="w-3 h-3 text-emerald-600" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 sm:text-right">
+                            <div>
+                              <p className="text-[10px] uppercase font-bold text-gray-400">সর্বমোট ক্রয়কৃত মূল্য</p>
+                              <p className="text-lg font-black text-emerald-700">৳{cust.totalSpent}</p>
+                            </div>
+                            {latestOrder && (
+                              <button
+                                type="button"
+                                onClick={() => setInvoiceOrder(latestOrder)}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-200 transition-colors cursor-pointer"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>ইনভয়েস</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle: Facebook Link and Customer Notes Editor */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Facebook Profile Box */}
+                          <div className="bg-blue-50/50 p-3.5 rounded-xl border border-blue-100 flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
+                                <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                                <span>ফেসবুক অ্যাকাউন্ট</span>
+                              </span>
+                              <button
+                                onClick={() => setEditingCrmCustomer({
+                                  phone: cust.phone,
+                                  name: cust.name,
+                                  facebookUrl: cust.facebookUrl,
+                                  notes: cust.notes
+                                })}
+                                className="text-[10px] font-bold text-blue-700 hover:underline cursor-pointer"
+                              >
+                                {cust.facebookUrl ? 'লিংক পরিবর্তন' : '+ ফেসবুক লিংক যোগ করুন'}
+                              </button>
+                            </div>
+                            {cust.facebookUrl ? (
+                              <a
+                                href={cust.facebookUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-bold text-blue-700 hover:underline truncate block"
+                              >
+                                🔗 {cust.facebookUrl}
+                              </a>
+                            ) : (
+                              <p className="text-xs text-gray-400 italic">কোনো ফেসবুক প্রোফাইল লিংক সংরক্ষণ করা নেই</p>
+                            )}
+                          </div>
+
+                          {/* Notes / Text Editor Box */}
+                          <div className="bg-amber-50/50 p-3.5 rounded-xl border border-amber-100 flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-amber-600" />
+                                <span>কাস্টমার নোট (টেক্সট এডিটর)</span>
+                              </span>
+                              <button
+                                onClick={() => setEditingCrmCustomer({
+                                  phone: cust.phone,
+                                  name: cust.name,
+                                  facebookUrl: cust.facebookUrl,
+                                  notes: cust.notes
+                                })}
+                                className="text-[10px] font-bold text-amber-800 hover:underline cursor-pointer"
+                              >
+                                ✏️ নোট লিখুন / এডিট করুন
+                              </button>
+                            </div>
+                            <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-2">
+                              {cust.notes || <span className="text-gray-400 italic">এই কাস্টমারের জন্য কোনো নোট এখনো যোগ করা হয়নি।</span>}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Bottom: Linked Products Bought Breakdown with direct links */}
+                        <div className="pt-2">
+                          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                            গ্রাহকের ক্রয়কৃত খেলনাসমূহ ({cust.itemsBought.length} রকমের পণ্য):
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                            {cust.itemsBought.map((it, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {it.image && (
+                                    <img src={it.image} alt={it.name} className="w-7 h-7 rounded-lg object-cover bg-white shrink-0 border border-gray-200" />
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-gray-900 truncate max-w-[140px]">{it.name}</p>
+                                    <p className="text-[10px] text-gray-500 font-semibold">পরিমাণ: {it.quantity} টি</p>
+                                  </div>
+                                </div>
+                                <span className="font-black text-emerald-700 shrink-0">৳{it.price * it.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Quick Message Templates */}
+                        {latestOrder && (
+                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
+                            <span className="text-[11px] font-bold text-gray-400">মেসেজ টেমপ্লেট:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const greeting = `আসসালামু আলাইকুম ${cust.name} আপু/ভাইয়া! 💚\nGrowKins Toy World থেকে আপনার সাথে যোগাযোগ করা হচ্ছে। আপনার অর্ডারকৃত পণ্যের ব্যাপারে কোনো জিজ্ঞাসা থাকলে আমাদের জানাতে পারেন। হটলাইন: 01767026831`;
+                                navigator.clipboard.writeText(greeting);
+                                showToast('শুভেচ্ছা বার্তা কপি হয়েছে!');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <MessageSquare className="w-3 h-3 text-blue-500" />
+                              <span>শুভেচ্ছা বার্তা কপি</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const thankyou = `প্রিয় ${cust.name} আপু/ভাইয়া, 💚\nআপনার সন্তানের জন্য GrowKins-এর মন্টেসরি কাঠের শিক্ষণীয় খেলনাগুলো বেছে নেওয়ার জন্য আন্তরিক ধন্যবাদ। পণ্য হাতে পাওয়ার পর কেমন লাগলো আমাদের ফেসবুক পেইজ বা হটলাইনে (01767026831) জানাবেন!`;
+                                navigator.clipboard.writeText(thankyou);
+                                showToast('ধন্যবাদ বার্তা কপি হয়েছে!');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Heart className="w-3 h-3 text-rose-500" />
+                              <span>ধন্যবাদ বার্তা কপি</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tab 2: Toy World Products Management */}
         {activeTab === 'products' && (
           <div className="p-4 sm:p-8 space-y-6">
@@ -997,6 +1437,32 @@ export const ProviderApp: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
+                {/* 2-Way View Switcher: Grid View vs List View */}
+                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setProductViewMode('grid')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${productViewMode === 'grid'
+                      ? 'bg-white text-gray-900 shadow-xs'
+                      : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>গ্রিড ভিউ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProductViewMode('list')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${productViewMode === 'list'
+                      ? 'bg-white text-gray-900 shadow-xs'
+                      : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                  >
+                    <List className="w-3.5 h-3.5" />
+                    <span>লিস্ট ভিউ</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={() => { handleResetProductForm(); setActiveTab('new-product'); }}
                   className="px-4 py-2.5 rounded-xl bg-[#E76F51] hover:bg-[#D45A3D] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
@@ -1020,7 +1486,7 @@ export const ProviderApp: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-gray-300">
-                  আপনি যে কয়টি পণ্য নির্বাচন করবেন (১০টি, ২০টি বা ৫০টি), ঠিক সেই কয়টি পণ্যই সরাসরি 
+                  আপনি যে কয়টি পণ্য নির্বাচন করবেন (১০টি, ২০টি বা ৫০টি), ঠিক সেই কয়টি পণ্যই সরাসরি
                   <a href="/growkins-toy-world" target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#F4A261] ml-1">
                     /growkins-toy-world
                   </a> পেজে লাইভ থাকবে।
@@ -1065,32 +1531,29 @@ export const ProviderApp: React.FC = () => {
               {/* Filter Tabs */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
                 <button
-                  onClick={() => { setProductVisibilityFilter('all'); setProductPage(1); }}
-                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
-                    productVisibilityFilter === 'all'
-                      ? 'bg-[#24221F] text-white shadow-xs'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
+                  onClick={() => setProductVisibilityFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${productVisibilityFilter === 'all'
+                    ? 'bg-[#24221F] text-white shadow-xs'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
                 >
                   সকল খেলনা ({products.length})
                 </button>
                 <button
-                  onClick={() => { setProductVisibilityFilter('landing_active'); setProductPage(1); }}
-                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
-                    productVisibilityFilter === 'landing_active'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
+                  onClick={() => setProductVisibilityFilter('landing_active')}
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${productVisibilityFilter === 'landing_active'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
                 >
                   ল্যান্ডিংয়ে সক্রিয় ({activeLandingProductIds.length})
                 </button>
                 <button
-                  onClick={() => { setProductVisibilityFilter('landing_inactive'); setProductPage(1); }}
-                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${
-                    productVisibilityFilter === 'landing_inactive'
-                      ? 'bg-gray-700 text-white shadow-xs'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
+                  onClick={() => setProductVisibilityFilter('landing_inactive')}
+                  className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all ${productVisibilityFilter === 'landing_inactive'
+                    ? 'bg-gray-700 text-white shadow-xs'
+                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
                 >
                   নিষ্ক্রিয় / লুকানো ({Math.max(0, products.length - activeLandingProductIds.length)})
                 </button>
@@ -1102,148 +1565,231 @@ export const ProviderApp: React.FC = () => {
                 <input
                   type="text"
                   value={productSearchQuery}
-                  onChange={(e) => { setProductSearchQuery(e.target.value); setProductPage(1); }}
+                  onChange={(e) => setProductSearchQuery(e.target.value)}
                   placeholder="খেলনার নাম দিয়ে খুঁজুন..."
                   className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white"
                 />
               </div>
             </div>
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
-              {paginatedProducts.map((prod) => {
-                const customB = BENGALI_TOY_MAP[prod.id];
-                const displayName = customB?.bName || prod.name;
-                const displaySubtitle = customB?.bSubtitle || prod.subtitle || '';
-                const image = prod.featuredImage || prod.images?.main || (Array.isArray(prod.images) ? prod.images[0]?.url : '/items/busy-cube.jfif');
-                const price = Number(prod.price) || 0;
-                const originalPrice = Number(prod.originalPrice || prod.compareAtPrice) || Math.round(price * 1.35);
-                const isLandingActive = activeLandingProductIds.includes(prod.id);
+            {/* Products Display (No pagination - all products visible) */}
+            {filteredProducts.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-200">
+                <ShoppingBag className="w-10 h-10 mx-auto text-gray-300 mb-2" />
+                <p className="text-sm font-bold text-gray-600">কোনো খেলনা পণ্য পাওয়া যায়নি</p>
+              </div>
+            ) : productViewMode === 'grid' ? (
+              /* View 1: Responsive Grid View */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+                {filteredProducts.map((prod) => {
+                  const customB = BENGALI_TOY_MAP[prod.id];
+                  const displayName = customB?.bName || prod.name;
+                  const displaySubtitle = customB?.bSubtitle || prod.subtitle || '';
+                  const image = prod.featuredImage || prod.images?.main || (Array.isArray(prod.images) ? prod.images[0]?.url : '/items/busy-cube.jfif');
+                  const price = Number(prod.price) || 0;
+                  const originalPrice = Number(prod.originalPrice || prod.compareAtPrice) || Math.round(price * 1.35);
+                  const isLandingActive = activeLandingProductIds.includes(prod.id);
 
-                return (
-                  <div
-                    key={prod.id}
-                    className={`bg-white rounded-2xl border transition-all overflow-hidden flex flex-col justify-between ${
-                      isLandingActive
+                  return (
+                    <div
+                      key={prod.id}
+                      className={`bg-white rounded-2xl border transition-all overflow-hidden flex flex-col justify-between ${isLandingActive
                         ? 'border-emerald-300 shadow-sm ring-2 ring-emerald-500/10'
                         : 'border-gray-200 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <div>
-                      {/* Thumbnail */}
-                      <div className="relative aspect-video bg-[#FAF7F1] overflow-hidden">
-                        <img src={image} alt={displayName} className="w-full h-full object-cover" />
-                        <span className="absolute top-2 left-2 bg-[#24221F]/80 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                          {customB?.ageBadge || prod.ageBadge || '১–৩ বছর'}
-                        </span>
-                        
-                        {/* Live Landing Badge */}
-                        <span className={`absolute top-2 right-2 text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs ${
-                          isLandingActive 
-                            ? 'bg-emerald-600 text-white' 
+                        }`}
+                    >
+                      <div>
+                        {/* Thumbnail */}
+                        <div className="relative aspect-video bg-[#FAF7F1] overflow-hidden">
+                          <img src={image} alt={displayName} className="w-full h-full object-cover" />
+                          <span className="absolute top-2 left-2 bg-[#24221F]/80 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                            {customB?.ageBadge || prod.ageBadge || '১–৩ বছর'}
+                          </span>
+
+                          {/* Live Landing Badge */}
+                          <span className={`absolute top-2 right-2 text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs ${isLandingActive
+                            ? 'bg-emerald-600 text-white'
                             : 'bg-gray-700/80 text-gray-200'
-                        }`}>
-                          {isLandingActive ? '✓ ল্যান্ডিংয়ে সক্রিয়' : 'লুকানো'}
-                        </span>
-
-                        {prod.videoUrl && (
-                          <span className="absolute bottom-2 right-2 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Video className="w-3 h-3" />
-                            <span>ভিডিও যুক্ত</span>
+                            }`}>
+                            {isLandingActive ? '✓ ল্যান্ডিংয়ে সক্রিয়' : 'লুকানো'}
                           </span>
-                        )}
-                      </div>
 
-                      {/* Content */}
-                      <div className="p-4 space-y-2">
-                        <h4 className="font-black text-sm text-gray-900 line-clamp-1">
-                          {displayName}
-                        </h4>
-                        <p className="text-xs text-gray-500 line-clamp-2">
-                          {displaySubtitle}
-                        </p>
-                        <div className="flex items-baseline gap-2 pt-1">
-                          <span className="text-lg font-black text-[#2D6A4F]">
-                            ৳{price}
-                          </span>
-                          {originalPrice > price && (
-                            <span className="text-xs font-semibold text-gray-400 line-through">
-                              ৳{originalPrice}
+                          {prod.videoUrl && (
+                            <span className="absolute bottom-2 right-2 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Video className="w-3 h-3" />
+                              <span>ভিডিও যুক্ত</span>
                             </span>
                           )}
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Actions & Landing Toggle */}
-                    <div className="p-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2 bg-gray-50/50">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLandingProduct(prod.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
-                          isLandingActive
+                        {/* Content */}
+                        <div className="p-4 space-y-2">
+                          <h4 className="font-black text-sm text-gray-900 line-clamp-1">
+                            {displayName}
+                          </h4>
+                          <p className="text-xs text-gray-500 line-clamp-2">
+                            {displaySubtitle}
+                          </p>
+                          <div className="flex items-baseline gap-2 pt-1">
+                            <span className="text-lg font-black text-[#2D6A4F]">
+                              ৳{price}
+                            </span>
+                            {originalPrice > price && (
+                              <span className="text-xs font-semibold text-gray-400 line-through">
+                                ৳{originalPrice}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions & Landing Toggle */}
+                      <div className="p-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2 bg-gray-50/50">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLandingProduct(prod.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${isLandingActive
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
                             : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                        }`}
-                        title={isLandingActive ? 'ল্যান্ডিং পেজ থেকে সরাতে ক্লিক করুন' : 'ল্যান্ডিং পেজে দেখাতে ক্লিক করুন'}
-                      >
-                        {isLandingActive ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            <span>সক্রিয়</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="w-2 h-2 rounded-full bg-gray-500" />
-                            <span>লুকানো</span>
-                          </>
-                        )}
-                      </button>
+                            }`}
+                          title={isLandingActive ? 'ল্যান্ডিং পেজ থেকে সরাতে ক্লিক করুন' : 'ল্যান্ডিং পেজে দেখাতে ক্লিক করুন'}
+                        >
+                          {isLandingActive ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              <span>সক্রিয়</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="w-2 h-2 rounded-full bg-gray-500" />
+                              <span>লুকানো</span>
+                            </>
+                          )}
+                        </button>
 
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleOpenEditProduct(prod)}
-                          className="p-1.5 rounded-lg bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors cursor-pointer"
-                          title="সম্পাদনা করুন"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(prod.id)}
-                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                          title="মুছে ফেলুন"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditProduct(prod)}
+                            className="p-1.5 rounded-lg bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors cursor-pointer"
+                            title="সম্পাদনা করুন"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(prod.id)}
+                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                            title="মুছে ফেলুন"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* View 2: Detailed Responsive List / Table View */
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#FAF7F1] border-b border-gray-200 text-gray-700 uppercase font-black text-[10px] tracking-wider">
+                      <tr>
+                        <th className="p-3.5">খেলনা পণ্য বিবরণ</th>
+                        <th className="p-3.5">বিক্রয় মূল্য</th>
+                        <th className="p-3.5">বয়সের গ্রুপ</th>
+                        <th className="p-3.5">ভিডিও ডেমো</th>
+                        <th className="p-3.5 text-center">ল্যান্ডিং ডিসপ্লে</th>
+                        <th className="p-3.5 text-right">অ্যাকশন</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredProducts.map((prod) => {
+                        const customB = BENGALI_TOY_MAP[prod.id];
+                        const displayName = customB?.bName || prod.name;
+                        const displaySubtitle = customB?.bSubtitle || prod.subtitle || '';
+                        const image = prod.featuredImage || prod.images?.main || (Array.isArray(prod.images) ? prod.images[0]?.url : '/items/busy-cube.jfif');
+                        const price = Number(prod.price) || 0;
+                        const originalPrice = Number(prod.originalPrice || prod.compareAtPrice) || Math.round(price * 1.35);
+                        const isLandingActive = activeLandingProductIds.includes(prod.id);
 
-            {/* Products Pagination */}
-            {filteredProducts.length > 0 && (
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between text-xs">
-                <span className="text-gray-500 font-semibold">
-                  পৃষ্ঠা {productPage} এর {totalProductPages}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setProductPage(p => Math.max(1, p - 1))}
-                    disabled={productPage <= 1}
-                    className="px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
-                  >
-                    পূর্ববর্তী
-                  </button>
-                  <button
-                    onClick={() => setProductPage(p => Math.min(totalProductPages, p + 1))}
-                    disabled={productPage >= totalProductPages}
-                    className="px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
-                  >
-                    পরবর্তী
-                  </button>
+                        return (
+                          <tr
+                            key={prod.id}
+                            className={`hover:bg-gray-50/80 transition-colors ${isLandingActive ? 'bg-emerald-50/20' : ''
+                              }`}
+                          >
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={image}
+                                  alt={displayName}
+                                  className="w-12 h-12 rounded-xl object-cover bg-[#FAF7F1] border border-gray-200 shrink-0"
+                                />
+                                <div>
+                                  <p className="font-extrabold text-gray-900 text-xs">{displayName}</p>
+                                  <p className="text-[11px] text-gray-500 line-clamp-1">{displaySubtitle}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="font-black text-emerald-700 text-sm">৳{price}</span>
+                                {originalPrice > price && (
+                                  <span className="text-[10px] line-through text-gray-400">৳{originalPrice}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                {customB?.ageBadge || prod.ageBadge || '১–৩ বছর'}
+                              </span>
+                            </td>
+                            <td className="p-3.5">
+                              {prod.videoUrl ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
+                                  <Video className="w-3 h-3" />
+                                  <span>ভিডিও আছে</span>
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-[11px]">ভিডিও নেই</span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleLandingProduct(prod.id)}
+                                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${isLandingActive
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                  }`}
+                              >
+                                {isLandingActive ? '✓ সক্রিয়' : 'লুকানো'}
+                              </button>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleOpenEditProduct(prod)}
+                                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                                  title="সম্পাদনা করুন"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(prod.id)}
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                  title="মুছে ফেলুন"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
@@ -1623,6 +2169,36 @@ export const ProviderApp: React.FC = () => {
               </div>
             </div>
 
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setInvoiceOrder(selectedOrder);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>ইনভয়েস দেখুন ও প্রিন্ট</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditingOrder(selectedOrder);
+                  setSelectedOrder(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>এডিট</span>
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(selectedOrder.id)}
+                className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold border border-rose-200 transition-colors cursor-pointer"
+                title="মুছে ফেলুন"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             {/* Close Button */}
             <button
               onClick={() => setSelectedOrder(null)}
@@ -1630,6 +2206,99 @@ export const ProviderApp: React.FC = () => {
             >
               বন্ধ করুন
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Modal */}
+      {invoiceOrder && (
+        <InvoiceModal
+          order={invoiceOrder}
+          onClose={() => setInvoiceOrder(null)}
+        />
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <EditOrderModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSave={handleUpdateOrder}
+        />
+      )}
+
+      {/* Customer Facebook & Text Notes Quick Editor Modal */}
+      {editingCrmCustomer && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-base font-black text-gray-900">
+                  কাস্টমার তথ্য ও নোট সম্পাদনা
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {editingCrmCustomer.name} • {editingCrmCustomer.phone}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingCrmCustomer(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">
+                  ফেসবুক প্রোফাইল বা পেজ লিংক (Facebook Profile URL)
+                </label>
+                <input
+                  type="url"
+                  value={editingCrmCustomer.facebookUrl}
+                  onChange={(e) => setEditingCrmCustomer(prev => prev ? { ...prev, facebookUrl: e.target.value } : null)}
+                  placeholder="https://www.facebook.com/username"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">
+                  কাস্টমার নোট (টেক্সট এডিটর)
+                </label>
+                <textarea
+                  rows={4}
+                  value={editingCrmCustomer.notes}
+                  onChange={(e) => setEditingCrmCustomer(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                  placeholder="বাচ্চার বয়স, পছন্দ, পূর্বে কি কি নিয়েছে, ফলোআপ বা বিশেষ নির্দেশনা লিখে রাখুন..."
+                  className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51]"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setEditingCrmCustomer(null)}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 cursor-pointer"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (editingCrmCustomer) {
+                    handleSaveCrmCustomer(editingCrmCustomer.phone, {
+                      facebookUrl: editingCrmCustomer.facebookUrl,
+                      notes: editingCrmCustomer.notes
+                    });
+                  }
+                }}
+                className="px-5 py-2 rounded-xl bg-[#E76F51] hover:bg-[#D45A3D] text-white font-bold text-xs shadow-xs cursor-pointer"
+              >
+                সংরক্ষণ করুন
+              </button>
+            </div>
           </div>
         </div>
       )}
