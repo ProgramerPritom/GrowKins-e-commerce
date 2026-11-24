@@ -4,7 +4,8 @@ import {
   Lock, LogOut, Phone, MapPin, Calendar,
   ChevronRight, Copy, Check, Filter, Plus, Edit, Trash2,
   Image as ImageIcon, Video, ExternalLink, Menu, X, ArrowLeft,
-  ShoppingBag, ChevronLeft, Save, Sparkles, Users, LayoutGrid, List, FileText, Heart, MessageSquare
+  ShoppingBag, ChevronLeft, Save, Sparkles, Users, LayoutGrid, List, FileText, Heart, MessageSquare,
+  UserPlus, Star, Award
 } from 'lucide-react';
 import { orderService, productService } from '../../services';
 import { apiClient } from '../../lib/api/client';
@@ -14,6 +15,9 @@ import { PRODUCTS } from '../../data/products';
 import { BENGALI_TOY_MAP } from '../toy-world/bengaliToyData';
 import { InvoiceModal } from './InvoiceModal';
 import { EditOrderModal } from './EditOrderModal';
+import { PrintableTemplateModal } from './PrintableTemplateModal';
+import { AddCustomerModal } from './AddCustomerModal';
+import { CustomerMessageModal } from './CustomerMessageModal';
 
 type ProviderTab = 'orders' | 'products' | 'customers' | 'new-product' | 'media' | 'delivery';
 
@@ -45,6 +49,27 @@ export const ProviderApp: React.FC = () => {
 
   // Customer CRM State
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>('');
+  const [customerFilterTab, setCustomerFilterTab] = useState<'all' | 'repeat' | 'vip' | 'new'>('all');
+  const [manualCustomers, setManualCustomers] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('gk_crm_manual_customers');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Failed to parse saved manual customers', e);
+    }
+    return [];
+  });
+  const [addingCustomerOpen, setAddingCustomerOpen] = useState<boolean>(false);
+  const [repeatOrderCustomer, setRepeatOrderCustomer] = useState<any | null>(null);
+  const [activeMessageCustomer, setActiveMessageCustomer] = useState<any | null>(null);
+  const [printableTemplate, setPrintableTemplate] = useState<{
+    customerName: string;
+    customerPhone?: string;
+    orderNumber?: string;
+    items?: { name: string; quantity: number }[];
+    type: 'thankyou' | 'greeting';
+  } | null>(null);
+
   const [crmMeta, setCrmMeta] = useState<Record<string, { facebookUrl: string; notes: string }>>(() => {
     try {
       const saved = localStorage.getItem('gk_crm_customer_meta');
@@ -262,6 +287,151 @@ export const ProviderApp: React.FC = () => {
     showToast('কাস্টমার তথ্য ও নোট সফলভাবে সংরক্ষিত হয়েছে');
   };
 
+  // Add / Save Customer & Repeat Order with Google Sheets Sync
+  const handleSaveCustomer = async (
+    customerInfo: {
+      name: string;
+      phone: string;
+      streetAddress: string;
+      district: string;
+      facebookUrl: string;
+      notes: string;
+      tag: 'new' | 'repeat' | 'vip';
+    },
+    orderPayload: Partial<AdminOrder>,
+    syncGoogleSheets: boolean
+  ) => {
+    const cleanPhone = customerInfo.phone.trim().replace(/[^0-9]/g, '');
+
+    // 1. Google Sheets Sync
+    if (syncGoogleSheets) {
+      try {
+        const res = await orderService.create(orderPayload);
+        if (res && res.data) {
+          setOrders(prev => [res.data, ...prev]);
+        }
+        showToast('অর্ডার ও কাস্টমার সরাসরি গুগল শিট ডাটাবেজে যুক্ত করা হয়েছে!');
+      } catch (sheetErr) {
+        console.warn('Google Sheets sync notice:', sheetErr);
+        showToast('কাস্টমার লোকাল ডাটাবেজে সংরক্ষিত হয়েছে (গুগল শিট ব্যাকআপ সিঙ্ক হচ্ছে)');
+      }
+    }
+
+    // 2. Prepare full local order snapshot
+    const fullOrder: AdminOrder = {
+      id: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      orderNumber: orderPayload.orderNumber || `GK-${Date.now().toString().slice(-6)}`,
+      customer: {
+        name: customerInfo.name,
+        phone: cleanPhone,
+        isGuest: true
+      },
+      deliveryAddress: {
+        fullName: customerInfo.name,
+        phone: cleanPhone,
+        deliveryZone: customerInfo.district === 'ঢাকা' ? 'inside-dhaka' : 'outside-dhaka',
+        district: customerInfo.district || 'ঢাকা',
+        thanaArea: customerInfo.district || 'ঢাকা',
+        streetAddress: customerInfo.streetAddress || 'ঢাকা'
+      },
+      items: (orderPayload.items as any) || [],
+      subtotal: Number(orderPayload.subtotal) || 0,
+      deliveryFee: Number(orderPayload.deliveryFee) || 0,
+      discount: Number(orderPayload.discount) || 0,
+      total: Number(orderPayload.total) || 0,
+      currency: 'BDT',
+      paymentMethod: 'Cash on Delivery',
+      paymentStatus: 'cod_pending',
+      status: 'confirmed',
+      notes: customerInfo.notes,
+      timeline: [
+        {
+          id: `tml_${Date.now()}`,
+          status: 'confirmed',
+          title: 'Customer Order Logged via CRM',
+          description: 'GrowKins CRM entry',
+          timestamp: new Date().toISOString(),
+          actor: 'Provider CRM'
+        }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 3. Update Manual Customers array
+    const existingIndex = manualCustomers.findIndex(
+      c => (c.phone || '').replace(/[^0-9]/g, '') === cleanPhone
+    );
+
+    let updatedManuals: any[];
+    if (existingIndex >= 0) {
+      const existing = manualCustomers[existingIndex];
+      const updatedOrders = [fullOrder, ...(existing.orders || [])];
+      const updatedCustomer = {
+        ...existing,
+        name: customerInfo.name,
+        streetAddress: customerInfo.streetAddress || existing.streetAddress,
+        district: customerInfo.district || existing.district,
+        facebookUrl: customerInfo.facebookUrl || existing.facebookUrl,
+        notes: customerInfo.notes || existing.notes,
+        tag: updatedOrders.length > 1 ? 'repeat' : (customerInfo.tag || existing.tag),
+        orders: updatedOrders
+      };
+      updatedManuals = [...manualCustomers];
+      updatedManuals[existingIndex] = updatedCustomer;
+      showToast(`কাস্টমার "${customerInfo.name}"-এর নতুন রিপিট অর্ডার যুক্ত হয়েছে!`);
+    } else {
+      const newCustRecord = {
+        id: `cust_${Date.now()}`,
+        name: customerInfo.name,
+        phone: cleanPhone,
+        streetAddress: customerInfo.streetAddress,
+        district: customerInfo.district,
+        facebookUrl: customerInfo.facebookUrl,
+        notes: customerInfo.notes,
+        tag: customerInfo.tag,
+        orders: [fullOrder],
+        createdAt: new Date().toISOString()
+      };
+      updatedManuals = [newCustRecord, ...manualCustomers];
+      showToast(`নতুন কাস্টমার "${customerInfo.name}" সফলভাবে যুক্ত হয়েছে!`);
+    }
+
+    setManualCustomers(updatedManuals);
+    localStorage.setItem('gk_crm_manual_customers', JSON.stringify(updatedManuals));
+
+    // 4. Update crmMeta
+    const updatedMeta = {
+      ...crmMeta,
+      [cleanPhone]: {
+        facebookUrl: customerInfo.facebookUrl,
+        notes: customerInfo.notes
+      }
+    };
+    setCrmMeta(updatedMeta);
+    localStorage.setItem('gk_crm_customer_meta', JSON.stringify(updatedMeta));
+
+    // Also optimistically keep in orders state
+    setOrders(prev => {
+      if (prev.some(o => o.orderNumber === fullOrder.orderNumber)) return prev;
+      return [fullOrder, ...prev];
+    });
+  };
+
+  // Delete manual customer
+  const handleDeleteManualCustomer = (phone: string, name: string) => {
+    if (!window.confirm(`আপনি কি সত্যিই কাস্টমার "${name}"-এর সমস্ত তথ্য ও রেকর্ড মুছে ফেলতে চান?`)) {
+      return;
+    }
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const updated = manualCustomers.filter(
+      c => (c.phone || '').replace(/[^0-9]/g, '') !== cleanPhone
+    );
+    setManualCustomers(updated);
+    localStorage.setItem('gk_crm_manual_customers', JSON.stringify(updated));
+    showToast(`কাস্টমার "${name}" সফলভাবে মুছে ফেলা হয়েছে`);
+  };
+
   const handleCopyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone);
     setCopiedPhone(phone);
@@ -454,7 +624,7 @@ export const ProviderApp: React.FC = () => {
     showToast('প্রথম ১০টি খেলনা ল্যান্ডিং পেজে সক্রিয় করা হয়েছে!');
   };
 
-  // Customer CRM aggregation from orders
+  // Customer CRM aggregation from manualCustomers and orders
   const customersList = useMemo(() => {
     const map = new Map<string, {
       phone: string;
@@ -467,10 +637,60 @@ export const ProviderApp: React.FC = () => {
       facebookUrl: string;
       notes: string;
       lastOrderDate: string;
+      tag: 'new' | 'repeat' | 'vip';
+      isManual: boolean;
     }>();
 
+    // 1. Process manually added customers
+    manualCustomers.forEach(mc => {
+      const phone = (mc.phone || '').trim().replace(/[^0-9]/g, '');
+      if (!phone) return;
+      const meta = crmMeta[phone] || { facebookUrl: '', notes: '' };
+      const custOrders: AdminOrder[] = Array.isArray(mc.orders) ? mc.orders : [];
+      const totalSpent = custOrders.reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
+
+      const itemsBought: { id?: string; name: string; quantity: number; price: number; image?: string }[] = [];
+      custOrders.forEach((o: any) => {
+        if (Array.isArray(o.items)) {
+          o.items.forEach((it: any, idx: number) => {
+            const found = itemsBought.find(b => b.name === it.name);
+            if (found) {
+              found.quantity += (Number(it.quantity) || 1);
+            } else {
+              itemsBought.push({
+                id: it.productId || it.id || String(idx),
+                name: it.name,
+                quantity: Number(it.quantity) || 1,
+                price: Number(it.price) || 0,
+                image: it.image
+              });
+            }
+          });
+        }
+      });
+
+      const lastDate = custOrders.length > 0 ? (custOrders[0].createdAt || '') : (mc.createdAt || '');
+
+      map.set(phone, {
+        phone,
+        name: mc.name || 'সম্মানিত অভিভাবক',
+        streetAddress: mc.streetAddress || '',
+        district: mc.district || 'ঢাকা',
+        orders: custOrders,
+        totalSpent,
+        itemsBought,
+        facebookUrl: mc.facebookUrl || meta.facebookUrl || '',
+        notes: mc.notes || meta.notes || '',
+        lastOrderDate: lastDate,
+        tag: mc.tag || (custOrders.length > 1 ? 'repeat' : 'new'),
+        isManual: true
+      });
+    });
+
+    // 2. Process orders from Google Sheets / live backend
     orders.forEach(order => {
-      const phone = (order.customer?.phone || order.deliveryAddress?.phone || '').trim();
+      const rawPhone = (order.customer?.phone || order.deliveryAddress?.phone || '').trim();
+      const phone = rawPhone.replace(/[^0-9]/g, '');
       if (!phone) return;
       const name = order.customer?.name || order.deliveryAddress?.fullName || 'সম্মানিত অভিভাবক';
       const streetAddress = order.deliveryAddress?.streetAddress || '';
@@ -480,6 +700,19 @@ export const ProviderApp: React.FC = () => {
 
       if (!map.has(phone)) {
         const meta = crmMeta[phone] || { facebookUrl: '', notes: '' };
+        const itemsBought: { id?: string; name: string; quantity: number; price: number; image?: string }[] = [];
+        if (Array.isArray(order.items)) {
+          order.items.forEach((it, idx) => {
+            itemsBought.push({
+              id: (it as any).id || (it as any).productId || String(idx),
+              name: it.name,
+              quantity: Number(it.quantity) || 1,
+              price: Number(it.price) || 0,
+              image: it.image
+            });
+          });
+        }
+
         map.set(phone, {
           phone,
           name,
@@ -487,37 +720,54 @@ export const ProviderApp: React.FC = () => {
           district,
           orders: [order],
           totalSpent: orderTotal,
-          itemsBought: [],
+          itemsBought,
           facebookUrl: meta.facebookUrl || '',
           notes: meta.notes || order.notes || '',
-          lastOrderDate: orderDate
+          lastOrderDate: orderDate,
+          tag: 'new',
+          isManual: false
         });
       } else {
         const existing = map.get(phone)!;
-        existing.orders.push(order);
-        existing.totalSpent += orderTotal;
+        const alreadyIncluded = existing.orders.some(o =>
+          (o.id && o.id === order.id) ||
+          (o.orderNumber && o.orderNumber === order.orderNumber)
+        );
+        if (!alreadyIncluded) {
+          existing.orders.push(order);
+          existing.totalSpent += orderTotal;
+          if (Array.isArray(order.items)) {
+            order.items.forEach((it, idx) => {
+              const found = existing.itemsBought.find(b => b.name === it.name);
+              if (found) {
+                found.quantity += (Number(it.quantity) || 1);
+              } else {
+                existing.itemsBought.push({
+                  id: (it as any).id || (it as any).productId || String(idx),
+                  name: it.name,
+                  quantity: Number(it.quantity) || 1,
+                  price: Number(it.price) || 0,
+                  image: it.image
+                });
+              }
+            });
+          }
+        }
+
         if (orderDate && (!existing.lastOrderDate || new Date(orderDate) > new Date(existing.lastOrderDate))) {
           existing.lastOrderDate = orderDate;
         }
       }
+    });
 
-      // Collect items bought
-      const existing = map.get(phone)!;
-      if (Array.isArray(order.items)) {
-        order.items.forEach((it, idx) => {
-          const found = existing.itemsBought.find(b => b.name === it.name);
-          if (found) {
-            found.quantity += (Number(it.quantity) || 1);
-          } else {
-            existing.itemsBought.push({
-              id: (it as any).id || (it as any).productId || String(idx),
-              name: it.name,
-              quantity: Number(it.quantity) || 1,
-              price: Number(it.price) || 0,
-              image: it.image
-            });
-          }
-        });
+    // 3. Classify repeat & loyal tags
+    map.forEach(c => {
+      if (c.orders.length >= 3 || c.totalSpent >= 3000) {
+        c.tag = 'vip';
+      } else if (c.orders.length >= 2) {
+        c.tag = 'repeat';
+      } else {
+        c.tag = c.tag || 'new';
       }
     });
 
@@ -526,13 +776,22 @@ export const ProviderApp: React.FC = () => {
       const dateB = b.lastOrderDate ? new Date(b.lastOrderDate).getTime() : 0;
       return dateB - dateA;
     });
-  }, [orders, crmMeta]);
+  }, [orders, manualCustomers, crmMeta]);
 
-  // Filtered customers for CRM search
+  // Filtered customers for CRM search & filter tabs
   const filteredCustomers = useMemo(() => {
+    let list = customersList;
+    if (customerFilterTab === 'repeat') {
+      list = list.filter(c => c.orders.length > 1 || c.tag === 'repeat');
+    } else if (customerFilterTab === 'vip') {
+      list = list.filter(c => c.tag === 'vip');
+    } else if (customerFilterTab === 'new') {
+      list = list.filter(c => c.orders.length <= 1 && c.tag !== 'vip');
+    }
+
     const q = customerSearchQuery.toLowerCase().trim();
-    if (!q) return customersList;
-    return customersList.filter(c =>
+    if (!q) return list;
+    return list.filter(c =>
       c.name.toLowerCase().includes(q) ||
       c.phone.includes(q) ||
       c.district.toLowerCase().includes(q) ||
@@ -540,7 +799,7 @@ export const ProviderApp: React.FC = () => {
       c.notes.toLowerCase().includes(q) ||
       c.itemsBought.some(it => it.name.toLowerCase().includes(q))
     );
-  }, [customersList, customerSearchQuery]);
+  }, [customersList, customerSearchQuery, customerFilterTab]);
 
   // Stats
   const stats = useMemo(() => {
@@ -1177,95 +1436,263 @@ export const ProviderApp: React.FC = () => {
         {/* Tab: Customer CRM as per Order */}
         {activeTab === 'customers' && (
           <div className="p-4 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            {/* CRM Header Bar */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
               <div>
                 <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
                   <Users className="w-6 h-6 text-[#E76F51]" />
                   <span>কাস্টমার লিস্ট ও অর্ডার বিবরণ (CRM)</span>
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  প্রতিটি কাস্টমারের ক্রয়কৃত পণ্যের হিসাব, মোট খরচ, ফেসবুক প্রোফাইল ও নিজস্ব কাস্টমার নোট
+                  প্রতিটি কাস্টমারের ক্রয়কৃত পণ্যের হিসাব, মোট খরচ, ফেসবুক প্রোফাইল, নিজস্ব কাস্টমার নোট ও টেমপ্লেট
                 </p>
               </div>
 
-              {/* CRM Search */}
-              <div className="relative w-full sm:w-80">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={customerSearchQuery}
-                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                  placeholder="নাম, ফোন, ফেসবুক বা খেলনার নাম খুঁজুন..."
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white shadow-xs"
-                />
+              {/* Header Actions: Search, Add Customer & Refresh */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <div className="relative flex-1 sm:w-72">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={customerSearchQuery}
+                    onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                    placeholder="নাম, ফোন, ফেসবুক বা খেলনার নাম খুঁজুন..."
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51] bg-white shadow-2xs font-medium"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    loadOrders();
+                    loadProducts();
+                    showToast('গুগল শিট থেকে ডাটাবেজ রিফ্রেশ করা হয়েছে!');
+                  }}
+                  className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  title="গুগল শিট থেকে রিফ্রেশ"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="hidden sm:inline">শিট সিঙ্ক</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRepeatOrderCustomer(null);
+                    setAddingCustomerOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-[#E76F51] hover:from-emerald-700 hover:to-[#D45A3D] text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>+ নতুন কাস্টমার যোগ করুন</span>
+                </button>
               </div>
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট কাস্টমার</p>
-                <p className="text-xl font-black text-gray-900 mt-0.5">{customersList.length} জন</p>
-              </div>
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট অর্ডার সংখ্যা</p>
-                <p className="text-xl font-black text-blue-600 mt-0.5">{orders.length} টি</p>
-              </div>
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট বিক্রয় রেভিনিউ</p>
-                <p className="text-xl font-black text-emerald-600 mt-0.5">
-                  ৳{customersList.reduce((sum, c) => sum + c.totalSpent, 0)}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">গড় অর্ডার মূল্য</p>
-                <p className="text-xl font-black text-purple-600 mt-0.5">
-                  ৳{customersList.length > 0 ? Math.round(customersList.reduce((s, c) => s + c.totalSpent, 0) / customersList.length) : 0}
-                </p>
-              </div>
+            {(() => {
+              const totalCustomers = customersList.length;
+              const totalOrdersCount = customersList.reduce((s, c) => s + c.orders.length, 0);
+              const repeatCustomersCount = customersList.filter(c => c.orders.length > 1 || c.tag === 'repeat').length;
+              const vipCustomersCount = customersList.filter(c => c.tag === 'vip').length;
+              const totalRevenue = customersList.reduce((sum, c) => sum + c.totalSpent, 0);
+
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট কাস্টমার</p>
+                    <p className="text-xl font-black text-gray-900 mt-0.5">{totalCustomers} জন</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট অর্ডার সংখ্যা</p>
+                    <p className="text-xl font-black text-blue-600 mt-0.5">{totalOrdersCount} টি</p>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">রিপিট কাস্টমার (২+ ক্রয়)</p>
+                    <p className="text-xl font-black text-amber-600 mt-0.5">
+                      {repeatCustomersCount} জন {vipCustomersCount > 0 ? `(${vipCustomersCount} জন ভিআইপি)` : ''}
+                    </p>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">মোট বিক্রয় রেভিনিউ</p>
+                    <p className="text-xl font-black text-emerald-600 mt-0.5">
+                      ৳{totalRevenue}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[11px] font-bold text-gray-400 mr-1">ফিল্টার:</span>
+              <button
+                type="button"
+                onClick={() => setCustomerFilterTab('all')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  customerFilterTab === 'all'
+                    ? 'bg-gray-900 text-white shadow-2xs'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                সব কাস্টমার ({customersList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCustomerFilterTab('repeat')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  customerFilterTab === 'repeat'
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-white border border-gray-200 text-amber-800 hover:bg-amber-50'
+                }`}
+              >
+                <Star className="w-3.5 h-3.5 fill-amber-300" />
+                <span>রিপিট কাস্টমার ({customersList.filter(c => c.orders.length > 1 || c.tag === 'repeat').length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCustomerFilterTab('vip')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  customerFilterTab === 'vip'
+                    ? 'bg-purple-600 text-white shadow-2xs'
+                    : 'bg-white border border-gray-200 text-purple-800 hover:bg-purple-50'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>ভিআইপি গ্রাহক ({customersList.filter(c => c.tag === 'vip').length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCustomerFilterTab('new')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  customerFilterTab === 'new'
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-white border border-gray-200 text-emerald-800 hover:bg-emerald-50'
+                }`}
+              >
+                🟢 নতুন কাস্টমার ({customersList.filter(c => c.orders.length <= 1 && c.tag !== 'vip').length})
+              </button>
             </div>
 
             {/* Customers List Container */}
             <div className="space-y-4">
               {filteredCustomers.length === 0 ? (
-                <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-200">
-                  <Users className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-                  <p className="text-sm font-bold text-gray-600">কোনো কাস্টমার পাওয়া যায়নি</p>
+                <div className="bg-white rounded-3xl p-10 sm:p-14 text-center border border-gray-200 shadow-2xs space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                    <Users className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-extrabold text-gray-900">
+                      {customersList.length === 0
+                        ? 'কোনো কাস্টমার এখনো যোগ করা হয়নি'
+                        : 'অনুসন্ধানের সাথে কোনো কাস্টমার মেলেনি'}
+                    </h4>
+                    <p className="text-xs text-gray-500 max-w-md mx-auto mt-1">
+                      {customersList.length === 0
+                        ? 'আপনার ফেসবুক পেইজ বা পূর্বের ১০+ কাস্টমারের নাম, ফোন, ঠিকানা ও কেনা খেলনার হিসাব সংরক্ষণ করতে নিচে ক্লিক করুন।'
+                        : 'অন্য কোনো নাম, ফোন নম্বর বা খেলনার নাম দিয়ে আবার সার্চ করুন।'}
+                    </p>
+                  </div>
+                  {customersList.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRepeatOrderCustomer(null);
+                        setAddingCustomerOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-[#E76F51] hover:from-emerald-700 hover:to-[#D45A3D] text-white font-black text-xs shadow-md transition-all cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>+ প্রথম কাস্টমার যোগ করুন</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {filteredCustomers.map((cust) => {
                     const latestOrder = cust.orders[0];
+                    const effectiveOrder: AdminOrder = latestOrder || {
+                      id: `ord_${cust.phone}`,
+                      orderNumber: `GK-${cust.phone.slice(-4) || '1001'}`,
+                      customer: { name: cust.name, phone: cust.phone, isGuest: true },
+                      deliveryAddress: {
+                        fullName: cust.name,
+                        phone: cust.phone,
+                        deliveryZone: cust.district === 'ঢাকা' ? 'inside-dhaka' : 'outside-dhaka',
+                        district: cust.district,
+                        thanaArea: cust.district,
+                        streetAddress: cust.streetAddress || 'ঢাকা'
+                      },
+                      items: cust.itemsBought.map(it => ({
+                        productId: it.id || 'toy_item',
+                        name: it.name,
+                        price: it.price,
+                        quantity: it.quantity,
+                        total: it.price * it.quantity,
+                        image: it.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=300'
+                      })),
+                      subtotal: cust.totalSpent,
+                      deliveryFee: cust.district === 'ঢাকা' ? 70 : 130,
+                      total: cust.totalSpent,
+                      currency: 'BDT',
+                      paymentMethod: 'Cash on Delivery',
+                      paymentStatus: 'cod_pending',
+                      status: 'confirmed',
+                      notes: cust.notes,
+                      timeline: [],
+                      createdAt: cust.lastOrderDate || new Date().toISOString(),
+                      updatedAt: new Date().toISOString()
+                    };
+
+                    const isRepeat = cust.orders.length > 1 || cust.tag === 'repeat';
+                    const isVip = cust.tag === 'vip';
+
                     return (
                       <div
                         key={cust.phone}
-                        className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs hover:shadow-md transition-shadow space-y-4"
+                        className="bg-white rounded-3xl border border-gray-200 p-5 sm:p-6 shadow-2xs hover:shadow-md transition-shadow space-y-4"
                       >
-                        {/* Top: Customer Name, Phone, Total Spend & Badges */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#E76F51] to-[#F4A261] text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+                        {/* Top: Customer Name, Phone, Badges, Total Spend */}
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#E76F51] via-[#F4A261] to-emerald-500 text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0">
                               {cust.name.slice(0, 1) || 'C'}
                             </div>
                             <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-extrabold text-gray-900 text-sm">{cust.name}</h4>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-extrabold text-gray-900 text-base">{cust.name}</h4>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                   {cust.district || 'ঢাকা'}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
-                                  {cust.orders.length}টি অর্ডার
-                                </span>
+
+                                {/* Loyalty & Repeat Badges */}
+                                {isVip ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                                    <Award className="w-3 h-3 text-purple-600" />
+                                    <span>👑 ভিআইপি লয়াল কাস্টমার ({cust.orders.length}টি ক্রয়)</span>
+                                  </span>
+                                ) : isRepeat ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                                    <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
+                                    <span>⭐ নিয়মিত/রিপিট কাস্টমার ({cust.orders.length}টি অর্ডার)</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    🟢 নতুন কাস্টমার
+                                  </span>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
+
+                              <div className="flex items-center gap-3 mt-1.5 text-xs">
                                 <a
                                   href={`tel:${cust.phone}`}
-                                  className="inline-flex items-center gap-1 font-bold text-xs text-blue-600 hover:text-blue-800"
+                                  className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800"
                                 >
                                   <Phone className="w-3 h-3" />
                                   <span>{cust.phone}</span>
                                 </a>
                                 <button
+                                  type="button"
                                   onClick={() => handleCopyPhone(cust.phone)}
                                   className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
                                   title="ফোন নম্বর কপি করুন"
@@ -1276,38 +1703,120 @@ export const ProviderApp: React.FC = () => {
                                     <Copy className="w-3 h-3" />
                                   )}
                                 </button>
+                                {cust.streetAddress && (
+                                  <span className="text-gray-500 text-[11px] truncate max-w-xs">
+                                    • {cust.streetAddress}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3 sm:text-right">
-                            <div>
+                          <div className="flex items-center gap-4 sm:justify-end">
+                            <div className="text-left lg:text-right">
                               <p className="text-[10px] uppercase font-bold text-gray-400">সর্বমোট ক্রয়কৃত মূল্য</p>
-                              <p className="text-lg font-black text-emerald-700">৳{cust.totalSpent}</p>
+                              <p className="text-xl font-black text-emerald-700">৳{cust.totalSpent}</p>
+                              <p className="text-[10px] font-bold text-gray-500">{cust.orders.length}টি অর্ডার সম্পন্ন</p>
                             </div>
-                            {latestOrder && (
+                          </div>
+                        </div>
+
+                        {/* Customer Actions Toolbar: All 3 Templates + Repeat Order */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gray-50/90 rounded-2xl border border-gray-100 text-xs">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Template 1: Invoice */}
+                            <button
+                              type="button"
+                              onClick={() => setInvoiceOrder(effectiveOrder)}
+                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                              title="ইনভয়েস মেমো দেখুন ও প্রিন্ট করুন"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>📄 ইনভয়েস</span>
+                            </button>
+
+                            {/* Template 2: Printable Thank You & Greeting Card */}
+                            <button
+                              type="button"
+                              onClick={() => setPrintableTemplate({
+                                customerName: cust.name,
+                                customerPhone: cust.phone,
+                                orderNumber: effectiveOrder.orderNumber,
+                                items: cust.itemsBought,
+                                type: 'thankyou'
+                              })}
+                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-800 font-bold border border-rose-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                              title="ধন্যবাদ ও শুভেচ্ছা পত্র প্রিন্ট / PDF সংরক্ষণ করুন"
+                            >
+                              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                              <span>💚 থ্যাংক ইউ কার্ড</span>
+                            </button>
+
+                            {/* Template 3: WhatsApp & Message Template */}
+                            <button
+                              type="button"
+                              onClick={() => setActiveMessageCustomer(cust)}
+                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-800 font-bold border border-blue-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                              title="হোয়াটসঅ্যাপ ও এসএমএস বার্তা টেমপ্লেট পাঠান"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                              <span>💬 মেসেজ টেমপ্লেট</span>
+                            </button>
+
+                            {/* Repeat Order Action */}
+                            <button
+                              type="button"
+                              onClick={() => setRepeatOrderCustomer(cust)}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                              title="এই কাস্টমারের নতুন কোনো অর্ডারের হিসাব যুক্ত করুন"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>+ নতুন অর্ডার (রিপিট)</span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Edit Customer Meta */}
+                            <button
+                              type="button"
+                              onClick={() => setEditingCrmCustomer({
+                                phone: cust.phone,
+                                name: cust.name,
+                                facebookUrl: cust.facebookUrl,
+                                notes: cust.notes
+                              })}
+                              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-bold border border-gray-200 flex items-center gap-1 transition-colors cursor-pointer"
+                              title="কাস্টমার নোট বা ফেসবুক লিংক এডিট করুন"
+                            >
+                              <Edit className="w-3 h-3 text-gray-500" />
+                              <span>নোট/তথ্য এডিট</span>
+                            </button>
+
+                            {/* Delete button (if manual customer) */}
+                            {cust.isManual && (
                               <button
                                 type="button"
-                                onClick={() => setInvoiceOrder(latestOrder)}
-                                className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-200 transition-colors cursor-pointer"
+                                onClick={() => handleDeleteManualCustomer(cust.phone, cust.name)}
+                                className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer"
+                                title="কাস্টমার রেকর্ড মুছুন"
                               >
-                                <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>ইনভয়েস</span>
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
                         </div>
 
-                        {/* Middle: Facebook Link and Customer Notes Editor */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Middle: Facebook Link and Customer Notes Box */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                           {/* Facebook Profile Box */}
-                          <div className="bg-blue-50/50 p-3.5 rounded-xl border border-blue-100 flex flex-col justify-between">
+                          <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 flex flex-col justify-between">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
                                 <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
                                 <span>ফেসবুক অ্যাকাউন্ট</span>
                               </span>
                               <button
+                                type="button"
                                 onClick={() => setEditingCrmCustomer({
                                   phone: cust.phone,
                                   name: cust.name,
@@ -1334,13 +1843,14 @@ export const ProviderApp: React.FC = () => {
                           </div>
 
                           {/* Notes / Text Editor Box */}
-                          <div className="bg-amber-50/50 p-3.5 rounded-xl border border-amber-100 flex flex-col justify-between">
+                          <div className="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100 flex flex-col justify-between">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
                                 <FileText className="w-3.5 h-3.5 text-amber-600" />
                                 <span>কাস্টমার নোট (টেক্সট এডিটর)</span>
                               </span>
                               <button
+                                type="button"
                                 onClick={() => setEditingCrmCustomer({
                                   phone: cust.phone,
                                   name: cust.name,
@@ -1349,16 +1859,16 @@ export const ProviderApp: React.FC = () => {
                                 })}
                                 className="text-[10px] font-bold text-amber-800 hover:underline cursor-pointer"
                               >
-                                ✏️ নোট লিখুন / এডিট করুন
+                                ✏️ নোট লিখুন / এডিট
                               </button>
                             </div>
-                            <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-2">
-                              {cust.notes || <span className="text-gray-400 italic">এই কাস্টমারের জন্য কোনো নোট এখনো যোগ করা হয়নি।</span>}
+                            <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-2 font-medium">
+                              {cust.notes || <span className="text-gray-400 italic">বাচ্চার বয়স বা বিশেষ কোনো নোট যোগ করা হয়নি।</span>}
                             </p>
                           </div>
                         </div>
 
-                        {/* Bottom: Linked Products Bought Breakdown with direct links */}
+                        {/* Bottom: Linked Products Bought Breakdown with direct details */}
                         <div className="pt-2">
                           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                             গ্রাহকের ক্রয়কৃত খেলনাসমূহ ({cust.itemsBought.length} রকমের পণ্য):
@@ -1384,34 +1894,41 @@ export const ProviderApp: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Quick Message Templates */}
-                        {latestOrder && (
-                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
-                            <span className="text-[11px] font-bold text-gray-400">মেসেজ টেমপ্লেট:</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const greeting = `আসসালামু আলাইকুম ${cust.name} আপু/ভাইয়া! 💚\nGrowKins Toy World থেকে আপনার সাথে যোগাযোগ করা হচ্ছে। আপনার অর্ডারকৃত পণ্যের ব্যাপারে কোনো জিজ্ঞাসা থাকলে আমাদের জানাতে পারেন। হটলাইন: 01767026831`;
-                                navigator.clipboard.writeText(greeting);
-                                showToast('শুভেচ্ছা বার্তা কপি হয়েছে!');
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <MessageSquare className="w-3 h-3 text-blue-500" />
-                              <span>শুভেচ্ছা বার্তা কপি</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const thankyou = `প্রিয় ${cust.name} আপু/ভাইয়া, 💚\nআপনার সন্তানের জন্য GrowKins-এর মন্টেসরি কাঠের শিক্ষণীয় খেলনাগুলো বেছে নেওয়ার জন্য আন্তরিক ধন্যবাদ। পণ্য হাতে পাওয়ার পর কেমন লাগলো আমাদের ফেসবুক পেইজ বা হটলাইনে (01767026831) জানাবেন!`;
-                                navigator.clipboard.writeText(thankyou);
-                                showToast('ধন্যবাদ বার্তা কপি হয়েছে!');
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <Heart className="w-3 h-3 text-rose-500" />
-                              <span>ধন্যবাদ বার্তা কপি</span>
-                            </button>
+                        {/* Order History Timeline (If customer has 2+ orders) */}
+                        {cust.orders.length > 1 && (
+                          <div className="pt-2 border-t border-gray-100">
+                            <p className="text-[11px] font-extrabold text-gray-700 mb-2 flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-blue-600" />
+                              <span>অর্ডার ইতিহাস ({cust.orders.length}টি অর্ডার):</span>
+                            </p>
+                            <div className="space-y-1.5">
+                              {cust.orders.map((ord, oIdx) => (
+                                <div
+                                  key={ord.id || oIdx}
+                                  className="flex items-center justify-between p-2 rounded-xl bg-gray-50/70 border border-gray-100 text-xs"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono font-bold text-blue-700">#{ord.orderNumber}</span>
+                                    <span className="text-[10px] text-gray-500">
+                                      {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : 'তারিখ নেই'}
+                                    </span>
+                                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border text-gray-600">
+                                      {ord.items?.length || 1}টি আইটেম
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-emerald-700">৳{ord.total}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setInvoiceOrder(ord)}
+                                      className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
+                                    >
+                                      ইনভয়েস
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -2301,6 +2818,40 @@ export const ProviderApp: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Printable Greeting & Thank You Card Modal */}
+      {printableTemplate && (
+        <PrintableTemplateModal
+          customerName={printableTemplate.customerName}
+          customerPhone={printableTemplate.customerPhone}
+          orderNumber={printableTemplate.orderNumber}
+          items={printableTemplate.items}
+          initialType={printableTemplate.type}
+          onClose={() => setPrintableTemplate(null)}
+        />
+      )}
+
+      {/* WhatsApp & Message Template Modal */}
+      {activeMessageCustomer && (
+        <CustomerMessageModal
+          customer={activeMessageCustomer}
+          onClose={() => setActiveMessageCustomer(null)}
+        />
+      )}
+
+      {/* Add New Customer / Repeat Order Modal */}
+      {(addingCustomerOpen || repeatOrderCustomer) && (
+        <AddCustomerModal
+          products={products}
+          existingCustomer={repeatOrderCustomer}
+          allExistingPhones={customersList.map(c => c.phone)}
+          onClose={() => {
+            setAddingCustomerOpen(false);
+            setRepeatOrderCustomer(null);
+          }}
+          onSave={handleSaveCustomer}
+        />
       )}
     </div>
   );

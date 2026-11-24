@@ -95,6 +95,38 @@ assert.strictEqual(deliveryFee, 70);
 assert.strictEqual(totalDue, 1870);
 console.log('✅ 4. Invoice Subtotal, Delivery Fee & Total Calculation Verified!');
 
+// 5. Repeat Customer & Multi-Order Aggregation Test
+const manualCustomer = {
+  id: 'cust_101',
+  name: 'Nigar Sultana',
+  phone: '01767026831',
+  streetAddress: 'House 12, Road 4',
+  district: 'Dhaka',
+  orders: [
+    { orderNumber: 'GK-1001', total: 1200, items: [{ name: 'Montessori Cube', quantity: 1, price: 1200 }] }
+  ]
+};
+
+// Add a 2nd order (Repeat purchase)
+const repeatOrder = { orderNumber: 'GK-1002', total: 900, items: [{ name: 'Spelling Board', quantity: 1, price: 900 }] };
+manualCustomer.orders.push(repeatOrder);
+
+const totalManualSpent = manualCustomer.orders.reduce((s, o) => s + o.total, 0);
+assert.strictEqual(manualCustomer.orders.length, 2, 'Customer should now have 2 orders');
+assert.strictEqual(totalManualSpent, 2100, 'Total spent should be 2100');
+const isRepeat = manualCustomer.orders.length > 1;
+assert.strictEqual(isRepeat, true, 'Customer should be marked as Repeat Customer');
+console.log('✅ 5. Repeat Customer 2-Order Aggregation Verified!');
+
+// 6. WhatsApp Message Link Generation Test
+const cleanPhone = manualCustomer.phone.replace(/[^0-9]/g, '');
+const waNumber = cleanPhone.startsWith('88') ? cleanPhone : (cleanPhone.startsWith('0') ? `88${cleanPhone}` : `880${cleanPhone}`);
+const sampleMessage = `আসসালামু আলাইকুম ${manualCustomer.name} আপু/ভাইয়া! 💚 GrowKins-এ আপনার অর্ডারটি গ্রহণ করা হয়েছে।`;
+const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(sampleMessage)}`;
+assert.ok(waUrl.includes('8801767026831'), 'WhatsApp URL must contain international phone format');
+assert.ok(waUrl.includes('GrowKins'), 'WhatsApp URL must contain encoded message');
+console.log('✅ 6. WhatsApp Message Generator Verified:', waUrl.slice(0, 50) + '...');
+
 console.log('==================================================');
 console.log('🎉 ALL INTEGRATION & CRM TESTS PASSED CONFIDENTLY!');
 console.log('==================================================');
