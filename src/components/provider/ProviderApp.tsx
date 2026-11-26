@@ -1057,11 +1057,19 @@ export const ProviderApp: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs"
+        />
+      )}
+
       {/* Left Sidebar Navigation */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-[#24221F] text-[#FAF7F1] flex flex-col justify-between transition-transform duration-300 ease-in-out
-        lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto shrink-0
-        ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+        lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto shrink-0 lg:translate-x-0
+        ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Brand & Menu */}
         <div className="p-5 space-y-6">
