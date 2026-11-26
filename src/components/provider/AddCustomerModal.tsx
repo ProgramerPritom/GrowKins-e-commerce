@@ -122,6 +122,18 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     setItems(items.filter((_, i) => i !== index));
   };
 
+  const handleUpdateItemName = (index: number, newName: string) => {
+    const updated = [...items];
+    updated[index].name = newName;
+    setItems(updated);
+  };
+
+  const handleUpdateItemPrice = (index: number, newPrice: number) => {
+    const updated = [...items];
+    updated[index].price = Math.max(0, Number(newPrice) || 0);
+    setItems(updated);
+  };
+
   const handleUpdateItemQuantity = (index: number, qty: number) => {
     if (qty <= 0) {
       handleRemoveItem(index);
@@ -500,38 +512,58 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 {items.map((it, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-gray-200 shadow-2xs"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-white rounded-xl border border-gray-200 shadow-2xs"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      {it.image && (
-                        <img src={it.image} alt={it.name} className="w-8 h-8 rounded-lg object-cover bg-gray-50 border shrink-0" />
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      {it.image ? (
+                        <img src={it.image} alt={it.name} className="w-8 h-8 rounded-lg object-cover bg-gray-50 border shrink-0" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-black shrink-0">
+                          {idx + 1}
+                        </div>
                       )}
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-900 truncate max-w-[200px]">{it.name}</p>
-                        <p className="text-[10px] text-gray-500 font-semibold">একক মূল্য: ৳{it.price}</p>
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="text"
+                          value={it.name}
+                          onChange={(e) => handleUpdateItemName(idx, e.target.value)}
+                          className="w-full text-xs font-bold text-gray-900 border-b border-dashed border-gray-300 focus:border-[#E76F51] focus:outline-none bg-transparent"
+                          placeholder="পণ্যের নাম"
+                        />
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] text-gray-500 font-bold">৳</span>
+                        <input
+                          type="number"
+                          value={it.price}
+                          onChange={(e) => handleUpdateItemPrice(idx, Number(e.target.value))}
+                          className="w-18 px-2 py-1 text-right font-bold text-xs rounded-lg border border-gray-200 focus:border-[#E76F51] focus:outline-none"
+                          title="একক মূল্য পরিবর্তন করুন"
+                        />
+                      </div>
+
                       <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                         <button
                           type="button"
                           onClick={() => handleUpdateItemQuantity(idx, it.quantity - 1)}
-                          className="px-2 py-0.5 hover:bg-gray-200 font-bold"
+                          className="px-2 py-0.5 hover:bg-gray-200 font-bold text-xs"
                         >
                           -
                         </button>
-                        <span className="px-2 font-bold text-gray-800">{it.quantity}</span>
+                        <span className="px-2 font-bold text-xs text-gray-800">{it.quantity}</span>
                         <button
                           type="button"
                           onClick={() => handleUpdateItemQuantity(idx, it.quantity + 1)}
-                          className="px-2 py-0.5 hover:bg-gray-200 font-bold"
+                          className="px-2 py-0.5 hover:bg-gray-200 font-bold text-xs"
                         >
                           +
                         </button>
                       </div>
 
-                      <span className="font-black text-emerald-700 w-16 text-right">
+                      <span className="font-black text-emerald-700 text-xs w-16 text-right">
                         ৳{it.price * it.quantity}
                       </span>
 

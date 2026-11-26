@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Package, Truck, CheckCircle2, Clock, Search, RefreshCw,
-  Lock, LogOut, Phone, MapPin, Calendar,
+  Lock, LogOut, Phone, Globe, Calendar,
   ChevronRight, Copy, Check, Filter, Plus, Edit, Trash2,
   Image as ImageIcon, Video, ExternalLink, Menu, X, ArrowLeft,
   ShoppingBag, ChevronLeft, Save, Sparkles, Users, LayoutGrid, List, FileText, Heart, MessageSquare,
-  UserPlus, Star, Award
+  UserPlus, Star, Award, Eye
 } from 'lucide-react';
 import { orderService, productService } from '../../services';
 import { apiClient } from '../../lib/api/client';
@@ -18,6 +18,15 @@ import { EditOrderModal } from './EditOrderModal';
 import { PrintableTemplateModal } from './PrintableTemplateModal';
 import { AddCustomerModal } from './AddCustomerModal';
 import { CustomerMessageModal } from './CustomerMessageModal';
+import { EditCustomerModal } from './EditCustomerModal';
+
+export const normalizeBdPhone = (phoneStr: string): string => {
+  const digits = (phoneStr || '').replace(/[^0-9]/g, '');
+  if (digits.startsWith('880') && digits.length === 13) {
+    return '0' + digits.slice(3);
+  }
+  return digits;
+};
 
 type ProviderTab = 'orders' | 'products' | 'customers' | 'new-product' | 'media' | 'delivery';
 
@@ -85,6 +94,10 @@ export const ProviderApp: React.FC = () => {
     facebookUrl: string;
     notes: string;
   } | null>(null);
+  const [editingFullCustomer, setEditingFullCustomer] = useState<any | null>(null);
+  const [viewCustomerDetails, setViewCustomerDetails] = useState<any | null>(null);
+  const [customerPage, setCustomerPage] = useState<number>(1);
+  const [customersPerPage] = useState<number>(10);
 
   // Products State
   const [products, setProducts] = useState<any[]>([]);
@@ -280,11 +293,103 @@ export const ProviderApp: React.FC = () => {
 
   // Save CRM Customer Details (Facebook, Notes)
   const handleSaveCrmCustomer = (phone: string, meta: { facebookUrl: string; notes: string }) => {
-    const updated = { ...crmMeta, [phone]: meta };
+    const raw = (phone || '').replace(/[^0-9]/g, '');
+    const norm = normalizeBdPhone(phone);
+    const updated = {
+      ...crmMeta,
+      [phone]: meta,
+      [raw]: meta,
+      [norm]: meta
+    };
     setCrmMeta(updated);
     localStorage.setItem('gk_crm_customer_meta', JSON.stringify(updated));
+
+    // Also update in manualCustomers if matching
+    setManualCustomers(prev => prev.map(c => {
+      if (normalizeBdPhone(c.phone) === norm || (c.phone || '').replace(/[^0-9]/g, '') === raw) {
+        return {
+          ...c,
+          facebookUrl: meta.facebookUrl,
+          notes: meta.notes
+        };
+      }
+      return c;
+    }));
+
     setEditingCrmCustomer(null);
     showToast('কাস্টমার তথ্য ও নোট সফলভাবে সংরক্ষিত হয়েছে');
+  };
+
+  // Full Customer Profile Save
+  const handleSaveFullCustomer = async (updatedCustomer: {
+    phone: string;
+    name: string;
+    streetAddress: string;
+    district: string;
+    facebookUrl: string;
+    notes: string;
+    tag: 'new' | 'repeat' | 'vip';
+  }) => {
+    const raw = (updatedCustomer.phone || '').replace(/[^0-9]/g, '');
+    const norm = normalizeBdPhone(updatedCustomer.phone);
+    const metaObj = {
+      facebookUrl: updatedCustomer.facebookUrl,
+      notes: updatedCustomer.notes,
+      tag: updatedCustomer.tag,
+      name: updatedCustomer.name,
+      streetAddress: updatedCustomer.streetAddress,
+      district: updatedCustomer.district
+    };
+    const updated = {
+      ...crmMeta,
+      [updatedCustomer.phone]: metaObj,
+      [raw]: metaObj,
+      [norm]: metaObj
+    };
+    setCrmMeta(updated);
+    localStorage.setItem('gk_crm_customer_meta', JSON.stringify(updated));
+
+    // Update in manualCustomers if matching or add
+    setManualCustomers(prev => {
+      const idx = prev.findIndex(
+        c => normalizeBdPhone(c.phone) === norm || (c.phone || '').replace(/[^0-9]/g, '') === raw
+      );
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = {
+          ...next[idx],
+          name: updatedCustomer.name,
+          streetAddress: updatedCustomer.streetAddress,
+          district: updatedCustomer.district,
+          facebookUrl: updatedCustomer.facebookUrl,
+          notes: updatedCustomer.notes,
+          tag: updatedCustomer.tag
+        };
+        localStorage.setItem('gk_crm_manual_customers', JSON.stringify(next));
+        return next;
+      } else {
+        const next = [
+          {
+            id: `cust_${Date.now()}`,
+            name: updatedCustomer.name,
+            phone: updatedCustomer.phone,
+            streetAddress: updatedCustomer.streetAddress,
+            district: updatedCustomer.district,
+            facebookUrl: updatedCustomer.facebookUrl,
+            notes: updatedCustomer.notes,
+            tag: updatedCustomer.tag,
+            orders: [],
+            createdAt: new Date().toISOString()
+          },
+          ...prev
+        ];
+        localStorage.setItem('gk_crm_manual_customers', JSON.stringify(next));
+        return next;
+      }
+    });
+
+    showToast(`কাস্টমার "${updatedCustomer.name}"-এর প্রোফাইল ও তথ্য সফলভাবে সংরক্ষিত হয়েছে`);
+    setEditingFullCustomer(null);
   };
 
   // Add / Save Customer & Repeat Order with Google Sheets Sync
@@ -641,11 +746,17 @@ export const ProviderApp: React.FC = () => {
       isManual: boolean;
     }>();
 
+    const getMeta = (p: string) => {
+      const raw = (p || '').replace(/[^0-9]/g, '');
+      const norm = normalizeBdPhone(p);
+      return crmMeta[p] || crmMeta[norm] || crmMeta[raw] || { facebookUrl: '', notes: '' };
+    };
+
     // 1. Process manually added customers
     manualCustomers.forEach(mc => {
-      const phone = (mc.phone || '').trim().replace(/[^0-9]/g, '');
+      const phone = normalizeBdPhone(mc.phone || '');
       if (!phone) return;
-      const meta = crmMeta[phone] || { facebookUrl: '', notes: '' };
+      const meta = getMeta(phone);
       const custOrders: AdminOrder[] = Array.isArray(mc.orders) ? mc.orders : [];
       const totalSpent = custOrders.reduce((sum: number, o: any) => sum + (Number(o.total) || 0), 0);
 
@@ -690,7 +801,7 @@ export const ProviderApp: React.FC = () => {
     // 2. Process orders from Google Sheets / live backend
     orders.forEach(order => {
       const rawPhone = (order.customer?.phone || order.deliveryAddress?.phone || '').trim();
-      const phone = rawPhone.replace(/[^0-9]/g, '');
+      const phone = normalizeBdPhone(rawPhone);
       if (!phone) return;
       const name = order.customer?.name || order.deliveryAddress?.fullName || 'সম্মানিত অভিভাবক';
       const streetAddress = order.deliveryAddress?.streetAddress || '';
@@ -699,7 +810,7 @@ export const ProviderApp: React.FC = () => {
       const orderDate = order.createdAt || '';
 
       if (!map.has(phone)) {
-        const meta = crmMeta[phone] || { facebookUrl: '', notes: '' };
+        const meta = getMeta(phone);
         const itemsBought: { id?: string; name: string; quantity: number; price: number; image?: string }[] = [];
         if (Array.isArray(order.items)) {
           order.items.forEach((it, idx) => {
@@ -721,7 +832,7 @@ export const ProviderApp: React.FC = () => {
           orders: [order],
           totalSpent: orderTotal,
           itemsBought,
-          facebookUrl: meta.facebookUrl || '',
+          facebookUrl: meta.facebookUrl || (order.customer as any)?.facebookUrl || (order.customer as any)?.metadata?.facebookUrl || '',
           notes: meta.notes || order.notes || '',
           lastOrderDate: orderDate,
           tag: 'new',
@@ -729,6 +840,13 @@ export const ProviderApp: React.FC = () => {
         });
       } else {
         const existing = map.get(phone)!;
+        const meta = getMeta(phone);
+        if (meta.facebookUrl && !existing.facebookUrl) {
+          existing.facebookUrl = meta.facebookUrl;
+        }
+        if (meta.notes && !existing.notes) {
+          existing.notes = meta.notes;
+        }
         const alreadyIncluded = existing.orders.some(o =>
           (o.id && o.id === order.id) ||
           (o.orderNumber && o.orderNumber === order.orderNumber)
@@ -800,6 +918,13 @@ export const ProviderApp: React.FC = () => {
       c.itemsBought.some(it => it.name.toLowerCase().includes(q))
     );
   }, [customersList, customerSearchQuery, customerFilterTab]);
+
+  // Paginated Customers (10 per page)
+  const totalCustomerPages = Math.ceil(filteredCustomers.length / customersPerPage) || 1;
+  const paginatedCustomers = useMemo(() => {
+    const start = (customerPage - 1) * customersPerPage;
+    return filteredCustomers.slice(start, start + customersPerPage);
+  }, [filteredCustomers, customerPage, customersPerPage]);
 
   // Stats
   const stats = useMemo(() => {
@@ -935,7 +1060,7 @@ export const ProviderApp: React.FC = () => {
       {/* Left Sidebar Navigation */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-[#24221F] text-[#FAF7F1] flex flex-col justify-between transition-transform duration-300 ease-in-out
-        lg:static lg:translate-x-0
+        lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto shrink-0
         ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
       `}>
         {/* Brand & Menu */}
@@ -1204,181 +1329,220 @@ export const ProviderApp: React.FC = () => {
                   <p className="text-sm font-bold text-gray-600">কোনো অর্ডার পাওয়া যায়নি</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {paginatedOrders.map((order) => {
-                    const phone = order.customer?.phone || order.deliveryAddress?.phone || '';
-                    const customerName = order.customer?.name || order.deliveryAddress?.fullName || 'Valued Customer';
-                    const itemsCount = Array.isArray(order.items) ? order.items.reduce((s, it) => s + (it.quantity || 1), 0) : 0;
-                    const formattedDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('bn-BD', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : 'সম্প্রতি';
+                <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-[#FAF7F1] text-gray-700 font-extrabold uppercase text-[10px] tracking-wider border-b border-gray-200">
+                        <tr>
+                          <th className="py-3.5 px-4 whitespace-nowrap">অর্ডার আইডি ও তারিখ</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">গ্রাহক ও মোবাইল</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">ঠিকানা ও জেলা</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">অর্ডারকৃত পণ্যসমূহ</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">সর্বমোট</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">স্ট্যাটাস</th>
+                          <th className="py-3.5 px-4 text-right whitespace-nowrap">অ্যাকশন</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 font-medium">
+                        {paginatedOrders.map((order) => {
+                          const phone = order.customer?.phone || order.deliveryAddress?.phone || '';
+                          const customerName = order.customer?.name || order.deliveryAddress?.fullName || 'Valued Customer';
+                          const itemsCount = Array.isArray(order.items) ? order.items.reduce((s, it) => s + (it.quantity || 1), 0) : 0;
+                          const formattedDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('bn-BD', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          }) : 'সম্প্রতি';
 
-                    return (
-                      <div
-                        key={order.id}
-                        className="bg-white rounded-2xl border border-gray-200 shadow-xs hover:shadow-md transition-shadow p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-                      >
-                        {/* Customer & Address */}
-                        <div className="space-y-2 flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-black text-sm text-[#24221F]">
-                              #{order.orderNumber}
-                            </span>
-                            {getStatusBadge(order.status)}
-                            <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" /> {formattedDate}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              ক্যাশ অন ডেলিভারি (COD)
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                            <div className="font-extrabold text-gray-900 text-sm">
-                              👤 {customerName}
-                            </div>
-                            {phone && (
-                              <div className="flex items-center gap-1.5">
-                                <a
-                                  href={`tel:${phone}`}
-                                  className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg"
-                                >
-                                  <Phone className="w-3 h-3 text-blue-600" />
-                                  <span>{phone}</span>
-                                </a>
-                                <button
-                                  onClick={() => handleCopyPhone(phone)}
-                                  className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                  title="কপি করুন"
-                                >
-                                  {copiedPhone === phone ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                  ) : (
-                                    <Copy className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex items-start gap-1.5 text-xs text-gray-600 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-                            <MapPin className="w-4 h-4 text-[#E76F51] shrink-0 mt-0.5" />
-                            <div>
-                              <span className="font-semibold text-gray-800">
-                                {order.deliveryAddress?.streetAddress || 'ঠিকানা দেওয়া হয়নি'}
-                              </span>
-                              {order.deliveryAddress?.district && (
-                                <span className="text-gray-500 font-medium">
-                                  , {order.deliveryAddress.district}
-                                </span>
-                              )}
-                              <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                {order.deliveryAddress?.deliveryZone === 'inside-dhaka' ? 'ঢাকার ভিতরে' : 'ঢাকার বাইরে'}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="pt-1">
-                            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
-                              অর্ডারকৃত খেলনাসমূহ ({itemsCount} টি):
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {Array.isArray(order.items) && order.items.map((it, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center gap-2 bg-gray-100/80 px-2.5 py-1.5 rounded-xl text-xs text-gray-800"
-                                >
-                                  {it.image && (
-                                    <img
-                                      src={it.image}
-                                      alt={it.name}
-                                      className="w-5 h-5 rounded object-cover bg-white shrink-0"
-                                    />
-                                  )}
-                                  <span className="font-bold truncate max-w-[180px]">{it.name}</span>
-                                  <span className="text-gray-500 font-semibold">× {it.quantity}</span>
-                                  <span className="text-emerald-700 font-bold">৳{it.price * it.quantity}</span>
+                          return (
+                            <tr key={order.id} className="hover:bg-orange-50/20 transition-colors">
+                              {/* Order No & Date */}
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <div className="space-y-1">
+                                  <span className="font-black text-sm text-[#24221F] block">
+                                    #{order.orderNumber}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 text-gray-400" />
+                                    <span>{formattedDate}</span>
+                                  </span>
+                                  <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    COD
+                                  </span>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
+                              </td>
 
-                        {/* Status Changer & Action */}
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 sm:border-l border-gray-100 pt-3 sm:pt-0 sm:pl-6 shrink-0 gap-3">
-                          <div className="text-left sm:text-right">
-                            <p className="text-[10px] uppercase font-bold text-gray-400">সর্বমোট প্রদেয়</p>
-                            <p className="text-lg sm:text-xl font-black text-emerald-700">
-                              ৳{order.total}
-                            </p>
-                            <p className="text-[11px] text-gray-500 font-medium">
-                              ডেলিভারি চার্জ: ৳{order.deliveryFee || 0}
-                            </p>
-                          </div>
+                              {/* Customer & Phone */}
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="space-y-1 min-w-[130px]">
+                                  <div className="font-extrabold text-gray-900 text-xs">
+                                    {customerName}
+                                  </div>
+                                  {phone && (
+                                    <div className="flex items-center gap-1">
+                                      <a
+                                        href={`tel:${phone}`}
+                                        className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800 text-[11px]"
+                                      >
+                                        <Phone className="w-3 h-3 text-blue-500" />
+                                        <span>{phone}</span>
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyPhone(phone)}
+                                        className="p-0.5 rounded text-gray-400 hover:text-gray-700 cursor-pointer"
+                                        title="ফোন নম্বর কপি করুন"
+                                      >
+                                        {copiedPhone === phone ? (
+                                          <Check className="w-3 h-3 text-emerald-600" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
 
-                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                            <select
-                              value={order.status}
-                              disabled={updatingOrderId === order.id}
-                              onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                              className="px-2.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold bg-white text-gray-800 focus:outline-none focus:border-[#E76F51] shadow-xs cursor-pointer"
-                            >
-                              <option value="pending">অপেক্ষমান (Pending)</option>
-                              <option value="confirmed">নিশ্চিত (Confirmed)</option>
-                              <option value="processing">প্যাকেজিং (Processing)</option>
-                              <option value="shipped">ডেলিভারিতে (Shipped)</option>
-                              <option value="delivered">সম্পন্ন (Delivered)</option>
-                              <option value="cancelled">বাতিল (Cancelled)</option>
-                            </select>
+                              {/* Address & District */}
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="space-y-1 max-w-[200px]">
+                                  <p className="text-[11px] text-gray-700 font-medium line-clamp-2">
+                                    {order.deliveryAddress?.streetAddress || 'ঠিকানা দেওয়া হয়নি'}
+                                  </p>
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                      {order.deliveryAddress?.district || 'ঢাকা'}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400">
+                                      ({order.deliveryAddress?.deliveryZone === 'inside-dhaka' ? 'ঢাকার ভিতরে' : 'ঢাকার বাইরে'})
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
 
-                            {/* 1-Click Invoice */}
-                            <button
-                              type="button"
-                              onClick={() => setInvoiceOrder(order)}
-                              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 border border-emerald-200 transition-colors cursor-pointer"
-                              title="ইনভয়েস তৈরি ও প্রিন্ট করুন"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>ইনভয়েস</span>
-                            </button>
+                              {/* Items */}
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="space-y-1 min-w-[170px] max-w-[240px]">
+                                  <div className="flex flex-wrap gap-1">
+                                    {Array.isArray(order.items) && order.items.map((it, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] font-bold text-gray-800"
+                                        title={`${it.name} - ৳${it.price}`}
+                                      >
+                                        {it.image && (
+                                          <img src={it.image} alt={it.name} className="w-3.5 h-3.5 rounded object-cover shrink-0" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+                                        )}
+                                        <span className="truncate max-w-[110px]">{it.name}</span>
+                                        <span className="text-gray-500 font-semibold">×{it.quantity}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <p className="text-[10px] font-bold text-gray-400">
+                                    মোট {itemsCount}টি খেলনা
+                                  </p>
+                                </div>
+                              </td>
 
-                            {/* Edit Order */}
-                            <button
-                              type="button"
-                              onClick={() => setEditingOrder(order)}
-                              className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer"
-                              title="অর্ডারের ঠিকানা ও তথ্য পরিবর্তন করুন"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
+                              {/* Total Amount */}
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <div>
+                                  <span className="text-sm font-black text-emerald-700">
+                                    ৳{order.total}
+                                  </span>
+                                  <p className="text-[10px] text-gray-400">
+                                    চার্জ: ৳{order.deliveryFee || 0}
+                                  </p>
+                                </div>
+                              </td>
 
-                            {/* Delete Order */}
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
-                              title="অর্ডার মুছে ফেলুন"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                              {/* Status */}
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <div className="space-y-1">
+                                  <div>{getStatusBadge(order.status)}</div>
+                                  <select
+                                    value={order.status}
+                                    disabled={updatingOrderId === order.id}
+                                    onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                                    className="px-2 py-1 rounded-lg border border-gray-200 text-[10px] font-bold bg-white text-gray-800 focus:outline-none focus:border-[#E76F51] shadow-2xs cursor-pointer"
+                                  >
+                                    <option value="pending">অপেক্ষমান</option>
+                                    <option value="confirmed">নিশ্চিত</option>
+                                    <option value="processing">প্যাকেজিং</option>
+                                    <option value="shipped">ডেলিভারিতে</option>
+                                    <option value="delivered">সম্পন্ন</option>
+                                    <option value="cancelled">বাতিল</option>
+                                  </select>
+                                </div>
+                              </td>
 
-                            {/* View Detail Modal */}
-                            <button
-                              onClick={() => setSelectedOrder(order)}
-                              className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
-                              title="সম্পূর্ণ বিস্তারিত দেখুন"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                              {/* Actions */}
+                              <td className="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1">
+                                  {/* View Detail Modal */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedOrder(order)}
+                                    className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                                    title="অর্ডারের বিস্তারিত দেখুন"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-gray-600" />
+                                  </button>
+
+                                  {/* Edit Order */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingOrder(order)}
+                                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer"
+                                    title="পণ্য, মূল্য ও তথ্য পরিবর্তন / এডিট"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Invoice */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setInvoiceOrder(order)}
+                                    className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer"
+                                    title="ইনভয়েস মেমো"
+                                  >
+                                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                  </button>
+
+                                  {/* Thank You Card */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setPrintableTemplate({
+                                      customerName: order.customer?.name || order.deliveryAddress?.fullName || 'সম্মানিত অভিভাবক',
+                                      customerPhone: order.customer?.phone || order.deliveryAddress?.phone,
+                                      orderNumber: order.orderNumber,
+                                      items: order.items,
+                                      type: 'thankyou'
+                                    })}
+                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                                    title="ধন্যবাদ ও শুভেচ্ছা পত্র প্রিন্ট"
+                                  >
+                                    <Heart className="w-3.5 h-3.5 text-rose-500" />
+                                  </button>
+
+                                  {/* Delete Order */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOrder(order.id)}
+                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                                    title="অর্ডার মুছে ফেলুন"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -1608,335 +1772,319 @@ export const ProviderApp: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {filteredCustomers.map((cust) => {
-                    const latestOrder = cust.orders[0];
-                    const effectiveOrder: AdminOrder = latestOrder || {
-                      id: `ord_${cust.phone}`,
-                      orderNumber: `GK-${cust.phone.slice(-4) || '1001'}`,
-                      customer: { name: cust.name, phone: cust.phone, isGuest: true },
-                      deliveryAddress: {
-                        fullName: cust.name,
-                        phone: cust.phone,
-                        deliveryZone: cust.district === 'ঢাকা' ? 'inside-dhaka' : 'outside-dhaka',
-                        district: cust.district,
-                        thanaArea: cust.district,
-                        streetAddress: cust.streetAddress || 'ঢাকা'
-                      },
-                      items: cust.itemsBought.map(it => ({
-                        productId: it.id || 'toy_item',
-                        name: it.name,
-                        price: it.price,
-                        quantity: it.quantity,
-                        total: it.price * it.quantity,
-                        image: it.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=300'
-                      })),
-                      subtotal: cust.totalSpent,
-                      deliveryFee: cust.district === 'ঢাকা' ? 70 : 130,
-                      total: cust.totalSpent,
-                      currency: 'BDT',
-                      paymentMethod: 'Cash on Delivery',
-                      paymentStatus: 'cod_pending',
-                      status: 'confirmed',
-                      notes: cust.notes,
-                      timeline: [],
-                      createdAt: cust.lastOrderDate || new Date().toISOString(),
-                      updatedAt: new Date().toISOString()
-                    };
+                <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-[#FAF7F1] text-gray-700 font-extrabold uppercase text-[10px] tracking-wider border-b border-gray-200">
+                        <tr>
+                          <th className="py-3.5 px-4 whitespace-nowrap">গ্রাহক ও মোবাইল</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">ঠিকানা ও জেলা</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">মোট অর্ডার ও ক্রয়মূল্য</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">ক্রয়কৃত খেলনাসমূহ</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">ফেসবুক প্রোফাইল</th>
+                          <th className="py-3.5 px-4 whitespace-nowrap">নোট</th>
+                          <th className="py-3.5 px-4 text-right whitespace-nowrap">অ্যাকশনসমূহ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 font-medium">
+                        {paginatedCustomers.map((cust) => {
+                          const latestOrder = cust.orders[0];
+                          const effectiveOrder: AdminOrder = latestOrder || {
+                            id: `ord_${cust.phone}`,
+                            orderNumber: `GK-${cust.phone.slice(-4) || '1001'}`,
+                            customer: { name: cust.name, phone: cust.phone, isGuest: true },
+                            deliveryAddress: {
+                              fullName: cust.name,
+                              phone: cust.phone,
+                              deliveryZone: cust.district === 'ঢাকা' ? 'inside-dhaka' : 'outside-dhaka',
+                              district: cust.district,
+                              thanaArea: cust.district,
+                              streetAddress: cust.streetAddress || 'ঢাকা'
+                            },
+                            items: cust.itemsBought.map(it => ({
+                              productId: it.id || 'toy_item',
+                              name: it.name,
+                              price: it.price,
+                              quantity: it.quantity,
+                              total: it.price * it.quantity,
+                              image: it.image || 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=300'
+                            })),
+                            subtotal: cust.totalSpent,
+                            deliveryFee: cust.district === 'ঢাকা' ? 70 : 130,
+                            total: cust.totalSpent,
+                            currency: 'BDT',
+                            paymentMethod: 'Cash on Delivery',
+                            paymentStatus: 'cod_pending',
+                            status: 'confirmed',
+                            notes: cust.notes,
+                            timeline: [],
+                            createdAt: cust.lastOrderDate || new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                          };
 
-                    const isRepeat = cust.orders.length > 1 || cust.tag === 'repeat';
-                    const isVip = cust.tag === 'vip';
+                          const isRepeat = cust.orders.length > 1 || cust.tag === 'repeat';
+                          const isVip = cust.tag === 'vip';
 
-                    return (
-                      <div
-                        key={cust.phone}
-                        className="bg-white rounded-3xl border border-gray-200 p-5 sm:p-6 shadow-2xs hover:shadow-md transition-shadow space-y-4"
-                      >
-                        {/* Top: Customer Name, Phone, Badges, Total Spend */}
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#E76F51] via-[#F4A261] to-emerald-500 text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0">
-                              {cust.name.slice(0, 1) || 'C'}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-extrabold text-gray-900 text-base">{cust.name}</h4>
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                  {cust.district || 'ঢাকা'}
-                                </span>
-
-                                {/* Loyalty & Repeat Badges */}
-                                {isVip ? (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
-                                    <Award className="w-3 h-3 text-purple-600" />
-                                    <span>👑 ভিআইপি লয়াল কাস্টমার ({cust.orders.length}টি ক্রয়)</span>
-                                  </span>
-                                ) : isRepeat ? (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
-                                    <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
-                                    <span>⭐ নিয়মিত/রিপিট কাস্টমার ({cust.orders.length}টি অর্ডার)</span>
-                                  </span>
-                                ) : (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                    🟢 নতুন কাস্টমার
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-3 mt-1.5 text-xs">
-                                <a
-                                  href={`tel:${cust.phone}`}
-                                  className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800"
-                                >
-                                  <Phone className="w-3 h-3" />
-                                  <span>{cust.phone}</span>
-                                </a>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyPhone(cust.phone)}
-                                  className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                  title="ফোন নম্বর কপি করুন"
-                                >
-                                  {copiedPhone === cust.phone ? (
-                                    <Check className="w-3 h-3 text-emerald-600" />
-                                  ) : (
-                                    <Copy className="w-3 h-3" />
-                                  )}
-                                </button>
-                                {cust.streetAddress && (
-                                  <span className="text-gray-500 text-[11px] truncate max-w-xs">
-                                    • {cust.streetAddress}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 sm:justify-end">
-                            <div className="text-left lg:text-right">
-                              <p className="text-[10px] uppercase font-bold text-gray-400">সর্বমোট ক্রয়কৃত মূল্য</p>
-                              <p className="text-xl font-black text-emerald-700">৳{cust.totalSpent}</p>
-                              <p className="text-[10px] font-bold text-gray-500">{cust.orders.length}টি অর্ডার সম্পন্ন</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Customer Actions Toolbar: All 3 Templates + Repeat Order */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gray-50/90 rounded-2xl border border-gray-100 text-xs">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {/* Template 1: Invoice */}
-                            <button
-                              type="button"
-                              onClick={() => setInvoiceOrder(effectiveOrder)}
-                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                              title="ইনভয়েস মেমো দেখুন ও প্রিন্ট করুন"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>📄 ইনভয়েস</span>
-                            </button>
-
-                            {/* Template 2: Printable Thank You & Greeting Card */}
-                            <button
-                              type="button"
-                              onClick={() => setPrintableTemplate({
-                                customerName: cust.name,
-                                customerPhone: cust.phone,
-                                orderNumber: effectiveOrder.orderNumber,
-                                items: cust.itemsBought,
-                                type: 'thankyou'
-                              })}
-                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-800 font-bold border border-rose-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                              title="ধন্যবাদ ও শুভেচ্ছা পত্র প্রিন্ট / PDF সংরক্ষণ করুন"
-                            >
-                              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                              <span>💚 থ্যাংক ইউ কার্ড</span>
-                            </button>
-
-                            {/* Template 3: WhatsApp & Message Template */}
-                            <button
-                              type="button"
-                              onClick={() => setActiveMessageCustomer(cust)}
-                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-800 font-bold border border-blue-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                              title="হোয়াটসঅ্যাপ ও এসএমএস বার্তা টেমপ্লেট পাঠান"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
-                              <span>💬 মেসেজ টেমপ্লেট</span>
-                            </button>
-
-                            {/* Repeat Order Action */}
-                            <button
-                              type="button"
-                              onClick={() => setRepeatOrderCustomer(cust)}
-                              className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-                              title="এই কাস্টমারের নতুন কোনো অর্ডারের হিসাব যুক্ত করুন"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>+ নতুন অর্ডার (রিপিট)</span>
-                            </button>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Edit Customer Meta */}
-                            <button
-                              type="button"
-                              onClick={() => setEditingCrmCustomer({
-                                phone: cust.phone,
-                                name: cust.name,
-                                facebookUrl: cust.facebookUrl,
-                                notes: cust.notes
-                              })}
-                              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-700 font-bold border border-gray-200 flex items-center gap-1 transition-colors cursor-pointer"
-                              title="কাস্টমার নোট বা ফেসবুক লিংক এডিট করুন"
-                            >
-                              <Edit className="w-3 h-3 text-gray-500" />
-                              <span>নোট/তথ্য এডিট</span>
-                            </button>
-
-                            {/* Delete button (if manual customer) */}
-                            {cust.isManual && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteManualCustomer(cust.phone, cust.name)}
-                                className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer"
-                                title="কাস্টমার রেকর্ড মুছুন"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Middle: Facebook Link and Customer Notes Box */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                          {/* Facebook Profile Box */}
-                          <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 flex flex-col justify-between">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
-                                <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
-                                <span>ফেসবুক অ্যাকাউন্ট</span>
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setEditingCrmCustomer({
-                                  phone: cust.phone,
-                                  name: cust.name,
-                                  facebookUrl: cust.facebookUrl,
-                                  notes: cust.notes
-                                })}
-                                className="text-[10px] font-bold text-blue-700 hover:underline cursor-pointer"
-                              >
-                                {cust.facebookUrl ? 'লিংক পরিবর্তন' : '+ ফেসবুক লিংক যোগ করুন'}
-                              </button>
-                            </div>
-                            {cust.facebookUrl ? (
-                              <a
-                                href={cust.facebookUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs font-bold text-blue-700 hover:underline truncate block"
-                              >
-                                🔗 {cust.facebookUrl}
-                              </a>
-                            ) : (
-                              <p className="text-xs text-gray-400 italic">কোনো ফেসবুক প্রোফাইল লিংক সংরক্ষণ করা নেই</p>
-                            )}
-                          </div>
-
-                          {/* Notes / Text Editor Box */}
-                          <div className="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100 flex flex-col justify-between">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
-                                <FileText className="w-3.5 h-3.5 text-amber-600" />
-                                <span>কাস্টমার নোট (টেক্সট এডিটর)</span>
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setEditingCrmCustomer({
-                                  phone: cust.phone,
-                                  name: cust.name,
-                                  facebookUrl: cust.facebookUrl,
-                                  notes: cust.notes
-                                })}
-                                className="text-[10px] font-bold text-amber-800 hover:underline cursor-pointer"
-                              >
-                                ✏️ নোট লিখুন / এডিট
-                              </button>
-                            </div>
-                            <p className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-2 font-medium">
-                              {cust.notes || <span className="text-gray-400 italic">বাচ্চার বয়স বা বিশেষ কোনো নোট যোগ করা হয়নি।</span>}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Bottom: Linked Products Bought Breakdown with direct details */}
-                        <div className="pt-2">
-                          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-                            গ্রাহকের ক্রয়কৃত খেলনাসমূহ ({cust.itemsBought.length} রকমের পণ্য):
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                            {cust.itemsBought.map((it, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-center justify-between bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs"
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  {it.image && (
-                                    <img src={it.image} alt={it.name} className="w-7 h-7 rounded-lg object-cover bg-white shrink-0 border border-gray-200" />
-                                  )}
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-gray-900 truncate max-w-[140px]">{it.name}</p>
-                                    <p className="text-[10px] text-gray-500 font-semibold">পরিমাণ: {it.quantity} টি</p>
+                          return (
+                            <tr key={cust.phone} className="hover:bg-emerald-50/20 transition-colors">
+                              {/* Customer & Mobile */}
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <div className="space-y-1">
+                                  <div className="font-extrabold text-gray-900 text-xs flex items-center gap-1.5">
+                                    <span>{cust.name}</span>
+                                    {isVip ? (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-purple-100 text-purple-800 border border-purple-200">
+                                        👑 VIP
+                                      </span>
+                                    ) : isRepeat ? (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                        ⭐ রিপিট
+                                      </span>
+                                    ) : (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                        🟢 নতুন
+                                      </span>
+                                    )}
                                   </div>
-                                </div>
-                                <span className="font-black text-emerald-700 shrink-0">৳{it.price * it.quantity}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Order History Timeline (If customer has 2+ orders) */}
-                        {cust.orders.length > 1 && (
-                          <div className="pt-2 border-t border-gray-100">
-                            <p className="text-[11px] font-extrabold text-gray-700 mb-2 flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-blue-600" />
-                              <span>অর্ডার ইতিহাস ({cust.orders.length}টি অর্ডার):</span>
-                            </p>
-                            <div className="space-y-1.5">
-                              {cust.orders.map((ord, oIdx) => (
-                                <div
-                                  key={ord.id || oIdx}
-                                  className="flex items-center justify-between p-2 rounded-xl bg-gray-50/70 border border-gray-100 text-xs"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-blue-700">#{ord.orderNumber}</span>
-                                    <span className="text-[10px] text-gray-500">
-                                      {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : 'তারিখ নেই'}
-                                    </span>
-                                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border text-gray-600">
-                                      {ord.items?.length || 1}টি আইটেম
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-black text-emerald-700">৳{ord.total}</span>
+                                  <div className="flex items-center gap-1 text-[11px]">
+                                    <a href={`tel:${cust.phone}`} className="text-blue-600 font-bold hover:underline">
+                                      {cust.phone}
+                                    </a>
                                     <button
                                       type="button"
-                                      onClick={() => setInvoiceOrder(ord)}
-                                      className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
+                                      onClick={() => handleCopyPhone(cust.phone)}
+                                      className="p-0.5 text-gray-400 hover:text-gray-700 cursor-pointer"
+                                      title="ফোন নম্বর কপি করুন"
                                     >
-                                      ইনভয়েস
+                                      {copiedPhone === cust.phone ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                                     </button>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                              </td>
+
+                              {/* Address & District */}
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="space-y-1 max-w-[170px]">
+                                  <p className="text-[11px] text-gray-700 font-medium line-clamp-2">
+                                    {cust.streetAddress || 'ঠিকানা নেই'}
+                                  </p>
+                                  <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                    {cust.district || 'ঢাকা'}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Orders & Total Spent */}
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                <div>
+                                  <span className="text-sm font-black text-emerald-700">
+                                    ৳{cust.totalSpent}
+                                  </span>
+                                  <p className="text-[10px] font-bold text-gray-500">
+                                    {cust.orders.length}টি অর্ডার সম্পন্ন
+                                  </p>
+                                </div>
+                              </td>
+
+                              {/* Toys Bought */}
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="space-y-1 min-w-[160px] max-w-[220px]">
+                                  <div className="flex flex-wrap gap-1">
+                                    {cust.itemsBought.slice(0, 3).map((it, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] font-bold text-gray-800"
+                                      >
+                                        <span className="truncate max-w-[100px]">{it.name}</span>
+                                        <span className="text-gray-500 font-semibold">×{it.quantity}</span>
+                                      </span>
+                                    ))}
+                                    {cust.itemsBought.length > 3 && (
+                                      <span className="text-[10px] text-gray-400 font-bold self-center">
+                                        +{cust.itemsBought.length - 3}টি
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Facebook Profile */}
+                              <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                                {cust.facebookUrl ? (
+                                  <a
+                                    href={cust.facebookUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline max-w-[130px] truncate"
+                                    title={cust.facebookUrl}
+                                  >
+                                    <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                    <span>প্রোফাইল লিংক</span>
+                                  </a>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCrmCustomer({
+                                      phone: cust.phone,
+                                      name: cust.name,
+                                      facebookUrl: cust.facebookUrl,
+                                      notes: cust.notes
+                                    })}
+                                    className="text-[10px] font-bold text-gray-400 hover:text-blue-600 cursor-pointer"
+                                  >
+                                    + লিংক দিন
+                                  </button>
+                                )}
+                              </td>
+
+                              {/* Notes */}
+                              <td className="py-3.5 px-4 align-top">
+                                <div className="max-w-[150px]">
+                                  <p className="text-[11px] text-gray-600 font-medium line-clamp-2">
+                                    {cust.notes || <span className="text-gray-300 italic">নোট নেই</span>}
+                                  </p>
+                                </div>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1">
+                                  {/* View Customer Details */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewCustomerDetails(cust)}
+                                    className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors cursor-pointer"
+                                    title="কাস্টমার বিস্তারিত প্রোফাইল দেখুন"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-gray-600" />
+                                  </button>
+
+                                  {/* Edit Customer & Orders (Complete Editor) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingFullCustomer(cust)}
+                                    className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer"
+                                    title="কাস্টমার তথ্য ও অর্ডার পণ্য/মূল্য এডিট করুন"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Repeat Order */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setRepeatOrderCustomer(cust)}
+                                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer"
+                                    title="নতুন রিপিট অর্ডার যোগ করুন"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Invoice */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setInvoiceOrder(effectiveOrder)}
+                                    className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors cursor-pointer"
+                                    title="ইনভয়েস"
+                                  >
+                                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                  </button>
+
+                                  {/* Printable Thank You Card */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setPrintableTemplate({
+                                      customerName: cust.name,
+                                      customerPhone: cust.phone,
+                                      orderNumber: effectiveOrder.orderNumber,
+                                      items: cust.itemsBought,
+                                      type: 'thankyou'
+                                    })}
+                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                                    title="ধন্যবাদ পত্র প্রিন্ট"
+                                  >
+                                    <Heart className="w-3.5 h-3.5 text-rose-500" />
+                                  </button>
+
+                                  {/* WhatsApp / Message */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveMessageCustomer(cust)}
+                                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors cursor-pointer"
+                                    title="মেসেজ টেমপ্লেট"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Delete manual customer */}
+                                  {cust.isManual && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteManualCustomer(cust.phone, cust.name)}
+                                      className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors cursor-pointer"
+                                      title="কাস্টমার রেকর্ড মুছুন"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Customer CRM Pagination Controls */}
+            {filteredCustomers.length > 0 && (
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="text-gray-500 font-semibold">
+                  <span>মোট {filteredCustomers.length} জন কাস্টমারের মধ্যে </span>
+                  <span className="font-bold text-gray-800">
+                    {Math.min((customerPage - 1) * customersPerPage + 1, filteredCustomers.length)} থেকে {Math.min(customerPage * customersPerPage, filteredCustomers.length)}
+                  </span>
+                  <span> দেখানো হচ্ছে (পৃষ্ঠা {customerPage} এর {totalCustomerPages})</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCustomerPage(p => Math.max(1, p - 1))}
+                    disabled={customerPage <= 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>পূর্ববর্তী</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalCustomerPages }, (_, i) => i + 1).slice(0, 5).map(pageNum => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCustomerPage(pageNum)}
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${customerPage === pageNum
+                          ? 'bg-[#E76F51] text-white shadow-xs'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCustomerPage(p => Math.min(totalCustomerPages, p + 1))}
+                    disabled={customerPage >= totalCustomerPages}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <span>পরবর্তী</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -2739,9 +2887,194 @@ export const ProviderApp: React.FC = () => {
       {editingOrder && (
         <EditOrderModal
           order={editingOrder}
+          products={products}
           onClose={() => setEditingOrder(null)}
           onSave={handleUpdateOrder}
         />
+      )}
+
+      {/* Edit Full Customer Profile & Order Items/Prices Modal */}
+      {editingFullCustomer && (
+        <EditCustomerModal
+          customer={editingFullCustomer}
+          products={products}
+          onClose={() => setEditingFullCustomer(null)}
+          onSaveCustomer={handleSaveFullCustomer}
+          onUpdateOrder={handleUpdateOrder}
+        />
+      )}
+
+      {/* Customer Profile & Purchase History Details Modal */}
+      {viewCustomerDetails && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-200 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-[#E76F51]/10 text-[#E76F51] flex items-center justify-center font-black text-lg">
+                  {viewCustomerDetails.name ? viewCustomerDetails.name.charAt(0).toUpperCase() : 'C'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-gray-900">
+                      {viewCustomerDetails.name}
+                    </h3>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                      viewCustomerDetails.tag === 'vip'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : viewCustomerDetails.tag === 'repeat'
+                        ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    }`}>
+                      {viewCustomerDetails.tag === 'vip' ? '★ ভিআইপি কাস্টমার' : viewCustomerDetails.tag === 'repeat' ? 'রিপিট কাস্টমার' : 'নতুন কাস্টমার'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                    <span>{viewCustomerDetails.phone}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPhone(viewCustomerDetails.phone)}
+                      className="text-xs text-blue-600 hover:underline cursor-pointer"
+                    >
+                      কপি করুন
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewCustomerDetails(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-orange-50/60 p-3 rounded-2xl border border-orange-100 text-center">
+                <span className="text-[11px] font-bold text-gray-500 block">মোট অর্ডার</span>
+                <span className="text-lg font-black text-[#E76F51]">
+                  {viewCustomerDetails.orderCount || 0} টি
+                </span>
+              </div>
+              <div className="bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100 text-center">
+                <span className="text-[11px] font-bold text-gray-500 block">মোট ক্রয় মূল্য</span>
+                <span className="text-lg font-black text-emerald-700">
+                  ৳{viewCustomerDetails.totalSpent || 0}
+                </span>
+              </div>
+              <div className="bg-blue-50/60 p-3 rounded-2xl border border-blue-100 text-center">
+                <span className="text-[11px] font-bold text-gray-500 block">গড় অর্ডার মূল্য</span>
+                <span className="text-lg font-black text-blue-700">
+                  ৳{viewCustomerDetails.orderCount ? Math.round(viewCustomerDetails.totalSpent / viewCustomerDetails.orderCount) : 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Address & Social */}
+            <div className="space-y-2.5 text-xs bg-gray-50 p-4 rounded-2xl border border-gray-100">
+              <div className="flex items-start gap-2 text-gray-700">
+                <span className="font-bold shrink-0 text-gray-500">ডেলিভারি ঠিকানা:</span>
+                <span>{viewCustomerDetails.streetAddress || 'কোনো ঠিকানা দেওয়া নেই'}, {viewCustomerDetails.district}</span>
+              </div>
+              {viewCustomerDetails.facebookUrl ? (
+                <div className="flex items-center gap-2">
+                  <span className="font-bold shrink-0 text-gray-500">ফেসবুক প্রোফাইল:</span>
+                  <a
+                    href={viewCustomerDetails.facebookUrl.startsWith('http') ? viewCustomerDetails.facebookUrl : `https://${viewCustomerDetails.facebookUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-bold truncate max-w-sm"
+                  >
+                    {viewCustomerDetails.facebookUrl} ↗
+                  </a>
+                </div>
+              ) : (
+                <div className="text-gray-400 italic">কোনো ফেসবুক প্রোফাইল লিংক সংরক্ষণ করা নেই</div>
+              )}
+              {viewCustomerDetails.notes && (
+                <div className="pt-2 border-t border-gray-200">
+                  <span className="font-bold text-amber-900 block mb-1">কাস্টমার নোট:</span>
+                  <p className="text-gray-800 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 leading-relaxed whitespace-pre-wrap">
+                    {viewCustomerDetails.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Order History */}
+            <div>
+              <h4 className="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">
+                অর্ডার ইতিহাস ও ক্রয়কৃত পণ্যসমূহ ({Array.isArray(viewCustomerDetails.orders) ? viewCustomerDetails.orders.length : 0} টি)
+              </h4>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {Array.isArray(viewCustomerDetails.orders) && viewCustomerDetails.orders.length > 0 ? (
+                  viewCustomerDetails.orders.map((ord: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-white rounded-xl border border-gray-200 shadow-2xs space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-900">#{ord.orderNumber || ord.id}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400">
+                            {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('bn-BD') : ''}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700">
+                            {ord.status}
+                          </span>
+                          <span className="font-black text-[#E76F51]">৳{ord.total}</span>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-gray-600 flex flex-wrap gap-2 pt-1 border-t border-gray-100">
+                        {Array.isArray(ord.items) && ord.items.map((it: any, iIdx: number) => (
+                          <span key={iIdx} className="bg-gray-50 px-2 py-0.5 rounded-md border border-gray-200">
+                            {it.name} (x{it.quantity}) - ৳{it.price}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-xl">
+                    কোনো অর্ডার ইতিহাস পাওয়া যায়নি
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  const targetCust = viewCustomerDetails;
+                  setViewCustomerDetails(null);
+                  setEditingFullCustomer(targetCust);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                ✏️ প্রোফাইল ও অর্ডার এডিট করুন
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetCust = viewCustomerDetails;
+                    setViewCustomerDetails(null);
+                    setRepeatOrderCustomer(targetCust);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-[#E76F51] hover:bg-[#D45A3D] text-white font-bold text-xs transition-colors cursor-pointer"
+                >
+                  + নতুন রিপিট অর্ডার
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewCustomerDetails(null)}
+                  className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs cursor-pointer"
+                >
+                  বন্ধ করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Customer Facebook & Text Notes Quick Editor Modal */}
