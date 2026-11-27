@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Printer, Check, MessageSquare, Phone, MapPin, Heart } from 'lucide-react';
 import type { AdminOrder } from '../../types/admin';
+import { printElement } from '../../utils/printHelper';
 
 interface InvoiceModalProps {
   order: AdminOrder;
@@ -72,7 +73,7 @@ GrowKins Bangladesh`;
   };
 
   const handlePrint = () => {
-    window.print();
+    printElement('growkins-invoice-sheet', `Invoice-${order.orderNumber}`, 'A4');
   };
 
   return (
@@ -311,22 +312,33 @@ GrowKins Bangladesh`;
         {/* Print Stylesheet */}
         <style>{`
           @media print {
-            body * {
-              visibility: hidden;
+            header, aside, nav, .print\\:hidden, button {
+              display: none !important;
             }
-            #growkins-invoice-sheet, #growkins-invoice-sheet * {
-              visibility: visible;
+            html, body {
+              overflow: visible !important;
+              height: auto !important;
+              background: #fff !important;
+            }
+            .fixed {
+              position: static !important;
+              background: transparent !important;
+              padding: 0 !important;
+            }
+            .overflow-hidden, .overflow-y-auto {
+              overflow: visible !important;
+              max-height: none !important;
+              height: auto !important;
             }
             #growkins-invoice-sheet {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
+              position: static !important;
+              width: 100% !important;
               max-width: 100% !important;
               box-shadow: none !important;
               border: none !important;
               padding: 0 !important;
-              margin: 0 !important;
+              margin: 0 auto !important;
+              visibility: visible !important;
             }
           }
         `}</style>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Printer, Copy, Check, Heart, Sparkles, Phone, Globe, Star, ShieldCheck } from 'lucide-react';
+import { printElement } from '../../utils/printHelper';
 
 interface PrintableTemplateModalProps {
   customerName: string;
@@ -25,7 +26,7 @@ export const PrintableTemplateModal: React.FC<PrintableTemplateModalProps> = ({
   const displayName = customerName.trim() || 'সম্মানিত অভিভাবক';
 
   const handlePrint = () => {
-    window.print();
+    printElement('printable-card-content', `${displayName} - GrowKins Card`, 'A5');
   };
 
   const handleCopyText = () => {
@@ -273,23 +274,34 @@ export const PrintableTemplateModal: React.FC<PrintableTemplateModalProps> = ({
       {/* Strict Print CSS */}
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          header, aside, nav, .print\\:hidden, button {
+            display: none !important;
           }
-          #printable-card-content, #printable-card-content * {
-            visibility: visible;
+          html, body {
+            overflow: visible !important;
+            height: auto !important;
+            background: #fff !important;
+          }
+          .fixed {
+            position: static !important;
+            background: transparent !important;
+            padding: 0 !important;
+          }
+          .overflow-hidden, .overflow-y-auto {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
           }
           #printable-card-content {
-            position: absolute;
-            left: 0;
-            top: 0;
+            position: static !important;
             width: 100% !important;
             max-width: 100% !important;
-            margin: 0 !important;
-            padding: 20px !important;
+            margin: 0 auto !important;
+            padding: 16px !important;
             border: none !important;
             box-shadow: none !important;
             background: white !important;
+            visibility: visible !important;
           }
           @page {
             size: A5 portrait;

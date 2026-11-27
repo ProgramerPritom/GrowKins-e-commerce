@@ -69,6 +69,7 @@ export const ProviderApp: React.FC = () => {
     return [];
   });
   const [addingCustomerOpen, setAddingCustomerOpen] = useState<boolean>(false);
+  const [orderCreateModalOpen, setOrderCreateModalOpen] = useState<boolean>(false);
   const [repeatOrderCustomer, setRepeatOrderCustomer] = useState<any | null>(null);
   const [activeMessageCustomer, setActiveMessageCustomer] = useState<any | null>(null);
   const [printableTemplate, setPrintableTemplate] = useState<{
@@ -1098,23 +1099,40 @@ export const ProviderApp: React.FC = () => {
 
           {/* Navigation Links */}
           <nav className="space-y-1.5 pt-4">
-            <button
-              onClick={() => { setActiveTab('orders'); setSidebarOpen(false); }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'orders'
-                ? 'bg-[#E76F51] text-white shadow-md'
-                : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <Package className="w-4 h-4" />
-                <span>অর্ডারসমূহ</span>
-              </div>
-              {stats.pending > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-gray-900">
-                  {stats.pending}
-                </span>
-              )}
-            </button>
+            <div className="space-y-1">
+              <button
+                onClick={() => { setActiveTab('orders'); setSidebarOpen(false); }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'orders'
+                  ? 'bg-[#E76F51] text-white shadow-md'
+                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Package className="w-4 h-4" />
+                  <span>অর্ডারসমূহ</span>
+                </div>
+                {stats.pending > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-gray-900">
+                    {stats.pending}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('orders');
+                  setRepeatOrderCustomer(null);
+                  setOrderCreateModalOpen(true);
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-[11px] font-bold text-emerald-400 hover:text-emerald-300 hover:bg-white/5 transition-all cursor-pointer"
+                title="ম্যানুয়ালি নতুন অর্ডার তৈরি করুন"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ নতুন অর্ডার তৈরি</span>
+              </button>
+            </div>
 
             <button
               onClick={() => { setActiveTab('customers'); setSidebarOpen(false); }}
@@ -1220,6 +1238,19 @@ export const ProviderApp: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {activeTab === 'orders' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRepeatOrderCustomer(null);
+                  setOrderCreateModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-[#E76F51] hover:from-emerald-700 hover:to-[#D45A3D] text-white text-xs font-black shadow-xs hover:shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ নতুন অর্ডার তৈরি</span>
+              </button>
+            )}
             <button
               onClick={() => { loadOrders(); loadProducts(); }}
               className="p-2 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors cursor-pointer"
@@ -1285,8 +1316,8 @@ export const ProviderApp: React.FC = () => {
               </div>
             </div>
 
-            {/* Filter & Search Bar */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Filter, Search & Create Order Bar */}
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
               {/* Status Filter Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
                 <Filter className="w-4 h-4 text-gray-400 shrink-0 ml-1 mr-1" />
@@ -1311,16 +1342,30 @@ export const ProviderApp: React.FC = () => {
                 ))}
               </div>
 
-              {/* Search Box */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={orderSearchQuery}
-                  onChange={(e) => { setOrderSearchQuery(e.target.value); setOrderPage(1); }}
-                  placeholder="নাম, ফোন বা অর্ডার নং খুঁজুন..."
-                  className="w-full sm:w-72 pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51]"
-                />
+              {/* Right Side: Search Box + "+ নতুন অর্ডার তৈরি করুন" */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={orderSearchQuery}
+                    onChange={(e) => { setOrderSearchQuery(e.target.value); setOrderPage(1); }}
+                    placeholder="নাম, ফোন বা অর্ডার নং খুঁজুন..."
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#E76F51]"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRepeatOrderCustomer(null);
+                    setOrderCreateModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-[#E76F51] hover:from-emerald-700 hover:to-[#D45A3D] text-white font-black text-xs shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ নতুন অর্ডার তৈরি করুন</span>
+                </button>
               </div>
             </div>
 
@@ -1332,9 +1377,20 @@ export const ProviderApp: React.FC = () => {
                   <p className="text-sm font-bold text-gray-600">অর্ডার লোড হচ্ছে...</p>
                 </div>
               ) : paginatedOrders.length === 0 ? (
-                <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-200">
+                <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-200 space-y-3">
                   <Package className="w-10 h-10 mx-auto text-gray-300 mb-2" />
                   <p className="text-sm font-bold text-gray-600">কোনো অর্ডার পাওয়া যায়নি</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRepeatOrderCustomer(null);
+                      setOrderCreateModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-[#E76F51] hover:from-emerald-700 hover:to-[#D45A3D] text-white font-black text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ প্রথম ম্যানুয়াল অর্ডার তৈরি করুন</span>
+                  </button>
                 </div>
               ) : (
                 <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
@@ -3181,14 +3237,16 @@ export const ProviderApp: React.FC = () => {
         />
       )}
 
-      {/* Add New Customer / Repeat Order Modal */}
-      {(addingCustomerOpen || repeatOrderCustomer) && (
+      {/* Add New Customer / Manual Order / Repeat Order Modal */}
+      {(addingCustomerOpen || orderCreateModalOpen || repeatOrderCustomer) && (
         <AddCustomerModal
           products={products}
+          mode={orderCreateModalOpen ? 'order' : 'customer'}
           existingCustomer={repeatOrderCustomer}
           allExistingPhones={customersList.map(c => c.phone)}
           onClose={() => {
             setAddingCustomerOpen(false);
+            setOrderCreateModalOpen(false);
             setRepeatOrderCustomer(null);
           }}
           onSave={handleSaveCustomer}

@@ -4,6 +4,7 @@ import type { AdminOrder, OrderItemSnapshot } from '../../types/admin/order';
 
 interface AddCustomerModalProps {
   products: any[];
+  mode?: 'order' | 'customer';
   existingCustomer?: {
     name: string;
     phone: string;
@@ -35,6 +36,7 @@ const POPULAR_DISTRICTS = [
 
 export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   products,
+  mode = 'customer',
   existingCustomer,
   allExistingPhones = [],
   onClose,
@@ -257,15 +259,21 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
         <div className="p-4 sm:p-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-[#E76F51] text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center">
-              <UserPlus className="w-5 h-5 text-white" />
+              {mode === 'order' ? <ShoppingBag className="w-5 h-5 text-white" /> : <UserPlus className="w-5 h-5 text-white" />}
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black tracking-tight">
-                {isRepeatOrderMode ? `রিপিট অর্ডার এন্ট্রি — ${name}` : 'নতুন কাস্টমার যোগ করুন (CRM Database)'}
+                {isRepeatOrderMode
+                  ? `রিপিট অর্ডার এন্ট্রি — ${name}`
+                  : mode === 'order'
+                  ? 'নতুন ম্যানুয়াল অর্ডার তৈরি করুন'
+                  : 'নতুন কাস্টমার যোগ করুন (CRM Database)'}
               </h3>
               <p className="text-[11px] text-white/80">
                 {isRepeatOrderMode
                   ? 'এই নিয়মিত কাস্টমারের জন্য নতুন একটি অর্ডার ও বিক্রয়ের হিসাব যুক্ত করুন'
+                  : mode === 'order'
+                  ? 'গ্রাহকের নাম, ঠিকানা, ফোন ও খেলনা পণ্য যুক্ত করে সরাসরি অর্ডার তৈরি ও গুগল শিটে সিঙ্ক করুন'
                   : 'গ্রাহকের নাম, ঠিকানা, ফোন ও ক্রয়কৃত খেলনার তথ্য সংরক্ষণ করুন'}
               </p>
             </div>
@@ -682,8 +690,14 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-4 h-4" />
-                  <span>{isRepeatOrderMode ? 'রিপিট অর্ডার সংরক্ষণ করুন' : 'কাস্টমার সংরক্ষণ করুন'}</span>
+                  {mode === 'order' ? <ShoppingBag className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                  <span>
+                    {isRepeatOrderMode
+                      ? 'রিপিট অর্ডার সংরক্ষণ করুন'
+                      : mode === 'order'
+                      ? 'অর্ডার তৈরি ও নিশ্চিত করুন'
+                      : 'কাস্টমার সংরক্ষণ করুন'}
+                  </span>
                 </>
               )}
             </button>
